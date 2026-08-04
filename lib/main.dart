@@ -47,6 +47,7 @@ void main() async {
         ChangeNotifierProvider<ExpensesNotifier>(
           create: (context) => ExpensesNotifier(
             context.read<GetTransactionsUseCase>(),
+            context.read<GetCategoriesUseCase>(),
           ),
         ),
         ChangeNotifierProvider<AddTransactionNotifier>(

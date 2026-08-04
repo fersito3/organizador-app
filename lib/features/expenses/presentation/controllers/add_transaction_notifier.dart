@@ -82,6 +82,7 @@ class AddTransactionNotifier extends ChangeNotifier {
   Future<void> save({
     required String descripcion,
     required double monto,
+    String? destinatarioEmisor,
   }) async {
     if (_categoriaIdSeleccionada == null) {
       throw Exception('Por favor selecciona una categoría');
@@ -97,6 +98,7 @@ class AddTransactionNotifier extends ChangeNotifier {
         fecha: _fechaSeleccionada,
         tipo: _tipoSeleccionado,
         categoriaId: _categoriaIdSeleccionada!,
+        destinatarioEmisor: destinatarioEmisor,
       );
     } finally {
       _isSaving = false;

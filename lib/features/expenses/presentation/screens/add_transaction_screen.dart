@@ -15,11 +15,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   final _descripcionController = TextEditingController();
   final _montoController = TextEditingController();
+  final _destinatarioEmisorController = TextEditingController();
 
   @override
   void dispose() {
     _descripcionController.dispose();
     _montoController.dispose();
+    _destinatarioEmisorController.dispose();
     super.dispose();
   }
 
@@ -38,6 +40,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       await notifier.save(
         descripcion: _descripcionController.text,
         monto: monto,
+        destinatarioEmisor: _destinatarioEmisorController.text.trim().isEmpty
+            ? null
+            : _destinatarioEmisorController.text,
       );
       if (mounted) {
         Navigator.pop(context);
@@ -129,6 +134,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       }
                       return null;
                     },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // --- CAMPO DESTINATARIO / EMISOR ---
+                  TextFormField(
+                    controller: _destinatarioEmisorController,
+                    decoration: const InputDecoration(
+                      labelText: 'Destinatario / Emisor (Opcional)',
+                      prefixIcon: Icon(Icons.person_outline),
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                   const SizedBox(height: 16),
 

@@ -11,5 +11,6 @@ abstract class IExpensesRepository {
     required DateTime fecha,
     required TipoTransaccion tipo,
     required int categoriaId,
+    String? destinatarioEmisor,
   });
 }

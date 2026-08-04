@@ -25,6 +25,7 @@ class Transacciones extends Table {
   DateTimeColumn get fecha => dateTime()();
   IntColumn get tipo => intEnum<TipoTransaccion>()(); // Egreso o Ingreso
   IntColumn get categoriaId => integer().references(Categorias, #id)();
+  TextColumn get destinatarioEmisor => text().nullable()(); // Persona o entidad asociada a la transacción
   
   // Campos específicos para la integración con Mercado Pago
   TextColumn get mpPaymentId => text().nullable()(); // ID único del pago en Mercado Pago (evita duplicados)
@@ -65,7 +66,26 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2; // Incrementamos la versión del esquema
+  int get schemaVersion => 3; // Incrementamos la versión del esquema para reflejar el nuevo campo
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (Migrator m) async {
+        await m.createAll();
+      },
+      onUpgrade: (Migrator m, int from, int to) async {
+        if (from < 3) {
+          // Agrega la columna de forma segura sin borrar datos existentes
+          await m.addColumn(transacciones, transacciones.destinatarioEmisor);
+        }
+      },
+      beforeOpen: (details) async {
+        // Habilitar claves foráneas en SQLite
+        await customStatement('PRAGMA foreign_keys = ON');
+      },
+    );
+  }
 
   Future<void> inicializarCategoriasBase() async {
   final categoriasExistentes = await select(categorias).get();

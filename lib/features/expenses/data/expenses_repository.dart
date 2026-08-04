@@ -32,6 +32,7 @@ class ExpensesRepository implements IExpensesRepository {
     required DateTime fecha,
     required TipoTransaccion tipo,
     required int categoriaId,
+    String? destinatarioEmisor,
   }) {
     return db.into(db.transacciones).insert(
           TransaccionesCompanion.insert(
@@ -40,6 +41,7 @@ class ExpensesRepository implements IExpensesRepository {
             fecha: fecha,
             tipo: tipo,
             categoriaId: categoriaId,
+            destinatarioEmisor: Value(destinatarioEmisor),
           ),
         );
   }
@@ -52,6 +54,7 @@ class ExpensesRepository implements IExpensesRepository {
       fecha: t.fecha,
       tipo: t.tipo,
       categoriaId: t.categoriaId,
+      destinatarioEmisor: t.destinatarioEmisor,
     );
   }
 

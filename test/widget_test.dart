@@ -9,6 +9,8 @@ import 'package:organizador_app/features/expenses/domain/models/categoria_domain
 import 'package:organizador_app/features/expenses/presentation/screens/expenses_screen.dart';
 import 'package:organizador_app/core/enums.dart';
 
+import 'package:organizador_app/features/expenses/domain/usecases/get_categories_usecase.dart';
+
 class MockExpensesRepository implements IExpensesRepository {
   @override
   Stream<List<Transaccion>> watchTransacciones() {
@@ -20,6 +22,7 @@ class MockExpensesRepository implements IExpensesRepository {
         fecha: DateTime(2026, 8, 4),
         tipo: TipoTransaccion.egreso,
         categoriaId: 1,
+        destinatarioEmisor: 'Mercado Libre',
       ),
     ]);
   }
@@ -43,6 +46,7 @@ class MockExpensesRepository implements IExpensesRepository {
     required DateTime fecha,
     required TipoTransaccion tipo,
     required int categoriaId,
+    String? destinatarioEmisor,
   }) async {
     return 1;
   }
@@ -52,6 +56,7 @@ void main() {
   testWidgets('ExpensesScreen displays transactions', (WidgetTester tester) async {
     final mockRepo = MockExpensesRepository();
     final getTxUseCase = GetTransactionsUseCase(mockRepo);
+    final getCatUseCase = GetCategoriesUseCase(mockRepo);
 
     // Montamos la pantalla inyectando UseCase y Notifier
     await tester.pumpWidget(
@@ -60,8 +65,9 @@ void main() {
           providers: [
             Provider<IExpensesRepository>.value(value: mockRepo),
             Provider<GetTransactionsUseCase>.value(value: getTxUseCase),
+            Provider<GetCategoriesUseCase>.value(value: getCatUseCase),
             ChangeNotifierProvider<ExpensesNotifier>(
-              create: (_) => ExpensesNotifier(getTxUseCase),
+              create: (_) => ExpensesNotifier(getTxUseCase, getCatUseCase),
             ),
           ],
           child: const ExpensesScreen(),
@@ -72,8 +78,8 @@ void main() {
     // Esperamos a que se procese el stream y la carga del notifier
     await tester.pumpAndSettle();
 
-    // Verificamos que la UI muestre la descripción y el monto formateado
+    // Verificamos que la UI muestre la descripción y el monto formateado (en la tarjeta de resumen y en la lista)
     expect(find.text('Gasto de Prueba'), findsOneWidget);
-    expect(find.text(r'-$150.00'), findsOneWidget);
+    expect(find.text(r'-$150.00'), findsNWidgets(2));
   });
 }

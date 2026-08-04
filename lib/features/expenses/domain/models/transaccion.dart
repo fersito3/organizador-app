@@ -7,6 +7,7 @@ class Transaccion {
   final DateTime fecha;
   final TipoTransaccion tipo;
   final int categoriaId;
+  final String? destinatarioEmisor; // Emisor/Receptor de la transferencia o pago
 
   Transaccion({
     required this.id,
@@ -15,5 +16,6 @@ class Transaccion {
     required this.fecha,
     required this.tipo,
     required this.categoriaId,
+    this.destinatarioEmisor,
   });
 }
