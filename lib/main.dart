@@ -48,6 +48,7 @@ void main() async {
           create: (context) => ExpensesNotifier(
             context.read<GetTransactionsUseCase>(),
             context.read<GetCategoriesUseCase>(),
+            context.read<IExpensesRepository>(),
           ),
         ),
         ChangeNotifierProvider<AddTransactionNotifier>(

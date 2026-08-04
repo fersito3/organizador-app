@@ -13,4 +13,5 @@ abstract class IExpensesRepository {
     required int categoriaId,
     String? destinatarioEmisor,
   });
+  Future<void> guardarTransaccionesSincronizadas(List<Transaccion> transacciones);
 }

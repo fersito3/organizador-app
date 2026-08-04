@@ -55,6 +55,8 @@ class ExpensesRepository implements IExpensesRepository {
       tipo: t.tipo,
       categoriaId: t.categoriaId,
       destinatarioEmisor: t.destinatarioEmisor,
+      mpPaymentId: t.mpPaymentId,
+      proveedor: t.proveedor,
     );
   }
 
@@ -65,5 +67,93 @@ class ExpensesRepository implements IExpensesRepository {
       colorHex: c.colorHex,
       tipo: c.tipo,
     );
+  }
+
+  @override
+  Future<void> guardarTransaccionesSincronizadas(List<Transaccion> transaccionesList) async {
+    // 1. Obtener categorías existentes para hacer el mapeo inteligente
+    final categoriasExistentes = await db.select(db.categorias).get();
+    
+    int? findCategoryIdByName(String name) {
+      try {
+        return categoriasExistentes.firstWhere((c) => c.nombre.toLowerCase() == name.toLowerCase()).id;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    final idComida = findCategoryIdByName('Comida');
+    final idFacultad = findCategoryIdByName('Facultad');
+    final idTransporte = findCategoryIdByName('Transporte');
+    final idVarios = findCategoryIdByName('Varios');
+    final idIngreso = findCategoryIdByName('Ingreso/Sueldo');
+
+    // 2. Guardar transacciones
+    for (final item in transaccionesList) {
+      if (item.mpPaymentId == null) continue;
+
+      // Verificar duplicados por ID único de Mercado Pago
+      final query = db.select(db.transacciones)
+        ..where((t) => t.mpPaymentId.equals(item.mpPaymentId!));
+      final result = await query.get();
+
+      if (result.isEmpty) {
+        // Algoritmo de categorización inteligente
+        int catId = idVarios ?? 1; // Fallback por defecto
+        
+        if (item.tipo == TipoTransaccion.ingreso) {
+          catId = idIngreso ?? catId;
+        } else {
+          final desc = item.descripcion.toLowerCase();
+          if (desc.contains('coto') ||
+              desc.contains('pedidosya') ||
+              desc.contains('comida') ||
+              desc.contains('almuerzo') ||
+              desc.contains('restaurant') ||
+              desc.contains('burger') ||
+              desc.contains('mcdonald') ||
+              desc.contains('supermercado') ||
+              desc.contains('carrefour') ||
+              desc.contains('dia') ||
+              desc.contains('rotiseria') ||
+              desc.contains('chino')) {
+            catId = idComida ?? catId;
+          } else if (desc.contains('facu') ||
+              desc.contains('facultad') ||
+              desc.contains('universidad') ||
+              desc.contains('copia') ||
+              desc.contains('apunte') ||
+              desc.contains('libro') ||
+              desc.contains('cuaderno')) {
+            catId = idFacultad ?? catId;
+          } else if (desc.contains('subte') ||
+              desc.contains('colectivo') ||
+              desc.contains('uber') ||
+              desc.contains('cabify') ||
+              desc.contains('didi') ||
+              desc.contains('sube') ||
+              desc.contains('nafta') ||
+              desc.contains('combustible') ||
+              desc.contains('peaje') ||
+              desc.contains('estacionamiento')) {
+            catId = idTransporte ?? catId;
+          }
+        }
+
+        // Insertar en la base de datos SQLite
+        await db.into(db.transacciones).insert(
+              TransaccionesCompanion.insert(
+                descripcion: item.descripcion,
+                monto: item.monto,
+                fecha: item.fecha,
+                tipo: item.tipo,
+                categoriaId: catId,
+                destinatarioEmisor: Value(item.destinatarioEmisor),
+                mpPaymentId: Value(item.mpPaymentId),
+                proveedor: const Value('MP'),
+              ),
+            );
+      }
+    }
   }
 }

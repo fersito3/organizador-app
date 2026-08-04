@@ -50,6 +50,9 @@ class MockExpensesRepository implements IExpensesRepository {
   }) async {
     return 1;
   }
+
+  @override
+  Future<void> guardarTransaccionesSincronizadas(List<Transaccion> transacciones) async {}
 }
 
 void main() {
@@ -67,7 +70,7 @@ void main() {
             Provider<GetTransactionsUseCase>.value(value: getTxUseCase),
             Provider<GetCategoriesUseCase>.value(value: getCatUseCase),
             ChangeNotifierProvider<ExpensesNotifier>(
-              create: (_) => ExpensesNotifier(getTxUseCase, getCatUseCase),
+              create: (_) => ExpensesNotifier(getTxUseCase, getCatUseCase, mockRepo),
             ),
           ],
           child: const ExpensesScreen(),

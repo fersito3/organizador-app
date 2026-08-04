@@ -1,14 +1,21 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../../../../core/enums.dart';
 import '../../domain/models/categoria_domain.dart';
 import '../../domain/models/transaccion.dart';
+import '../../domain/repository_interfaces/iexpenses_repository.dart';
 import '../../domain/usecases/get_transactions_usecase.dart';
 import '../../domain/usecases/get_categories_usecase.dart';
 
 class ExpensesNotifier extends ChangeNotifier {
   final GetTransactionsUseCase _getTransactionsUseCase;
   final GetCategoriesUseCase _getCategoriesUseCase;
+  final IExpensesRepository _expensesRepository;
+
+  // URL del backend en Render (se puede cambiar por localhost:3000 para pruebas locales)
+  static const String backendUrl = 'https://organizador-app-server.onrender.com';
 
   List<Transaccion> _transacciones = [];
   List<Transaccion> get transacciones => _transacciones;
@@ -31,6 +38,7 @@ class ExpensesNotifier extends ChangeNotifier {
   ExpensesNotifier(
     this._getTransactionsUseCase,
     this._getCategoriesUseCase,
+    this._expensesRepository,
   ) {
     _loadCategorias();
     _subscribeToTransactions();
@@ -52,6 +60,66 @@ class ExpensesNotifier extends ChangeNotifier {
       return _categorias.firstWhere((cat) => cat.id == id);
     } catch (_) {
       return null;
+    }
+  }
+
+  // Sincronizar transacciones en segundo plano desde el servidor Render
+  Future<void> sincronizarMercadoPago() async {
+    try {
+      // 1. Obtener la transacción más reciente de MP cargada localmente para filtrar la fecha de inicio
+      final transaccionesMp = _transacciones
+          .where((t) => t.destinatarioEmisor != null && t.mpPaymentId != null) // Simplificado o filtrado por MP
+          .toList();
+      
+      String? beginDate;
+      if (transaccionesMp.isNotEmpty) {
+        final masReciente = transaccionesMp
+            .map((t) => t.fecha)
+            .reduce((a, b) => a.isAfter(b) ? a : b);
+        beginDate = masReciente.toUtc().toIso8601String();
+      }
+
+      // 2. Configurar la URL
+      var url = Uri.parse('$backendUrl/api/mercadopago/transactions');
+      if (beginDate != null) {
+        url = url.replace(queryParameters: {'begin_date': beginDate});
+      }
+
+      debugPrint('Iniciando sincronización automática con Mercado Pago. URL: $url');
+
+      // 3. Realizar la petición HTTP con timeout de 15 segundos
+      final response = await http.get(url).timeout(const Duration(seconds: 15));
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final List<dynamic> transactionsJson = data['transactions'] ?? [];
+        
+        if (transactionsJson.isNotEmpty) {
+          final transaccionesNuevas = transactionsJson.map((tx) {
+            return Transaccion(
+              id: 0, // Autoincremental
+              descripcion: tx['descripcion'] ?? '',
+              monto: (tx['monto'] as num).toDouble(),
+              fecha: DateTime.parse(tx['fecha']),
+              tipo: tx['tipo'] == 'ingreso' ? TipoTransaccion.ingreso : TipoTransaccion.egreso,
+              categoriaId: 0, // Categorizado automáticamente por el repo
+              destinatarioEmisor: tx['destinatarioEmisor'],
+              mpPaymentId: tx['mpPaymentId'],
+              proveedor: 'MP',
+            );
+          }).toList();
+
+          // 4. Guardar en SQLite (la UI se actualizará automáticamente por el Stream)
+          await _expensesRepository.guardarTransaccionesSincronizadas(transaccionesNuevas);
+          debugPrint('Sincronizados ${transaccionesNuevas.length} nuevos pagos de Mercado Pago.');
+        } else {
+          debugPrint('Sincronización al día. No hay nuevas transacciones.');
+        }
+      } else {
+        debugPrint('Fallo al sincronizar con Mercado Pago: HTTP ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error de red al sincronizar con Mercado Pago: $e');
     }
   }
 
@@ -109,6 +177,8 @@ class ExpensesNotifier extends ChangeNotifier {
       (list) {
         _transacciones = list;
         _isLoading = false;
+        // Lanzamos la sincronización en segundo plano cada vez que recibimos actualizaciones locales frescas
+        sincronizarMercadoPago();
         notifyListeners();
       },
       onError: (error) {
