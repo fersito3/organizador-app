@@ -3,14 +3,11 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import '../enums.dart';
 
 // Este archivo generado automáticamente por Drift no existe todavía.
 // Es necesario para que el generador de código sepa dónde escribir la lógica.
 part 'app_database.g.dart';
-
-// --- ENUMS PARA CATEGORIZAR ---
-enum TipoTransaccion { egreso, ingreso }
-enum TipoTarea { parcial, entrega, TP, estudio, otro }
 
 // --- 1. TABLA DE CATEGORÍAS (Tanto para gastos como para ingresos) ---
 class Categorias extends Table {
@@ -69,6 +66,22 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   int get schemaVersion => 2; // Incrementamos la versión del esquema
+
+  Future<void> inicializarCategoriasBase() async {
+  final categoriasExistentes = await select(categorias).get();
+  
+  if (categoriasExistentes.isEmpty) {
+    await batch((batch) {
+      batch.insertAll(categorias, [
+        CategoriasCompanion.insert(nombre: 'Comida', colorHex: 'FF9800', tipo: TipoTransaccion.egreso),
+        CategoriasCompanion.insert(nombre: 'Facultad', colorHex: '2196F3', tipo: TipoTransaccion.egreso),
+        CategoriasCompanion.insert(nombre: 'Transporte', colorHex: '4CAF50', tipo: TipoTransaccion.egreso),
+        CategoriasCompanion.insert(nombre: 'Varios', colorHex: '9C27B0', tipo: TipoTransaccion.egreso),
+        CategoriasCompanion.insert(nombre: 'Ingreso/Sueldo', colorHex: '009688', tipo: TipoTransaccion.ingreso),
+      ]);
+    });
+  }
+}
 }
 
 LazyDatabase _openConnection() {
