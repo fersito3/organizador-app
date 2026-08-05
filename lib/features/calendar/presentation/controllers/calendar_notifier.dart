@@ -44,13 +44,18 @@ class CalendarNotifier extends ChangeNotifier {
   List<Evento> get eventosDelDia {
     return _eventos.where((e) {
       final inicio = e.fechaInicio;
-      final fin = e.fechaFin;
-      
       final dateOnly = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
       final inicioOnly = DateTime(inicio.year, inicio.month, inicio.day);
-      final finOnly = DateTime(fin.year, fin.month, fin.day);
       
-      return !dateOnly.isBefore(inicioOnly) && !dateOnly.isAfter(finOnly);
+      if (dateOnly.isBefore(inicioOnly)) return false;
+      
+      if (e.esRecurrente && e.patronRecurrencia == 'WEEKLY') {
+        return dateOnly.weekday == inicioOnly.weekday;
+      }
+      
+      final fin = e.fechaFin;
+      final finOnly = DateTime(fin.year, fin.month, fin.day);
+      return !dateOnly.isAfter(finOnly);
     }).toList();
   }
 

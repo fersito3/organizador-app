@@ -165,9 +165,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     // Comprobar eventos y tareas en este día
                     final tieneEventos = calendarNotifier.eventos.any((e) {
                       final inicio = DateTime(e.fechaInicio.year, e.fechaInicio.month, e.fechaInicio.day);
-                      final fin = DateTime(e.fechaFin.year, e.fechaFin.month, e.fechaFin.day);
                       final actual = DateTime(date.year, date.month, date.day);
-                      return !actual.isBefore(inicio) && !actual.isAfter(fin);
+                      
+                      if (actual.isBefore(inicio)) return false;
+                      
+                      if (e.esRecurrente && e.patronRecurrencia == 'WEEKLY') {
+                        return actual.weekday == inicio.weekday;
+                      }
+                      
+                      final fin = DateTime(e.fechaFin.year, e.fechaFin.month, e.fechaFin.day);
+                      return !actual.isAfter(fin);
                     });
 
                     final tieneTareas = tasksNotifier.tareas.any((t) =>
