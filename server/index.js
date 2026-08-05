@@ -147,11 +147,13 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
         // Determinamos la persona o entidad involucrada (destinatario o emisor)
         let destinatarioEmisor = 'Mercado Pago';
         
+        let contraparteMpId = null;
         if (tipo === 'ingreso') {
           // Si es un ingreso, nos pagó/transfirió otra persona (payer)
           const p = payment.payer || {};
           const fullName = `${p.first_name || ''} ${p.last_name || ''}`.trim();
           destinatarioEmisor = fullName || p.email || 'Remitente MP';
+          contraparteMpId = p.id ? p.id.toString() : null;
         } else {
           // Si es un egreso, buscamos el nombre del destinatario/receptor
           const poi = payment.point_of_interaction || {};
@@ -172,6 +174,7 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
           
           // Fallback a la descripción de la compra o genérico si no se encuentra
           destinatarioEmisor = recipientName || payment.description || 'Destinatario MP';
+          contraparteMpId = payment.collector_id ? payment.collector_id.toString() : null;
         }
         
         let descripcion = payment.description || (tipo === 'egreso' ? 'Gasto Mercado Pago' : 'Ingreso Mercado Pago');
@@ -186,6 +189,7 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
           fecha: payment.date_approved || payment.date_created,
           tipo: tipo, // 'ingreso' o 'egreso'
           destinatarioEmisor: destinatarioEmisor,
+          contraparteMpId: contraparteMpId,
           proveedor: 'MP'
         };
       });
