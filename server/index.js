@@ -76,7 +76,7 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
       requestedDate = CUTOFF_DATE;
     }
     
-    const dateString = requestedDate.toISOString();
+    const dateString = requestedDate.toISOString().replace(/\.\d+Z$/, 'Z');
 
     console.log(`Buscando transacciones en Mercado Pago desde: ${dateString} (Límite: ${limit})`);
 
@@ -94,7 +94,7 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
           limit: limit
         }
       }).catch(err => {
-        console.error('❌ Error al buscar ingresos de MP:', err.message);
+        console.error('❌ Error al buscar ingresos de MP:', err.response ? err.response.data : err.message);
         return { data: { results: [] } };
       }),
       ownerId ? axios.get('https://api.mercadopago.com/v1/payments/search', {
@@ -110,7 +110,7 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
           limit: limit
         }
       }).catch(err => {
-        console.error('❌ Error al buscar egresos de MP:', err.message);
+        console.error('❌ Error al buscar egresos de MP:', err.response ? err.response.data : err.message);
         return { data: { results: [] } };
       }) : Promise.resolve({ data: { results: [] } })
     ]);
