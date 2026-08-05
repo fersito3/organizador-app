@@ -87,6 +87,7 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
           Authorization: `Bearer ${MP_ACCESS_TOKEN}`
         },
         params: {
+          range: 'date_created',
           begin_date: dateString,
           sort: 'date_created',
           criteria: 'desc',
@@ -102,6 +103,7 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
         },
         params: {
           'payer.id': ownerId,
+          range: 'date_created',
           begin_date: dateString,
           sort: 'date_created',
           criteria: 'desc',

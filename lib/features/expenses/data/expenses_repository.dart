@@ -90,9 +90,15 @@ class ExpensesRepository implements IExpensesRepository {
     final idAmigos = findCategoryIdByName('Amigos');
     final idFarmacia = findCategoryIdByName('Farmacia');
 
+    // Fecha límite de corte del lado del cliente: 4 de agosto de 2026 a las 23:35 hs (UTC-3) -> 2026-08-05T02:35:00.000Z
+    final cutoffDate = DateTime.parse('2026-08-05T02:35:00Z');
+
     // 2. Guardar transacciones
     for (final item in transaccionesList) {
       if (item.mpPaymentId == null) continue;
+
+      // Ignorar transacciones previas a la fecha de corte (doble seguridad)
+      if (item.fecha.isBefore(cutoffDate)) continue;
 
       // Verificar duplicados por ID único de Mercado Pago
       final query = db.select(db.transacciones)
