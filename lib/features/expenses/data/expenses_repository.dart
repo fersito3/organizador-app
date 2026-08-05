@@ -1,5 +1,5 @@
 import 'package:drift/drift.dart';
-import '../../../core/database/app_database.dart';
+import '../../../core/database/app_database.dart' hide Conocido;
 import '../../../core/enums.dart';
 import '../domain/models/categoria_domain.dart';
 import '../domain/models/transaccion.dart';
