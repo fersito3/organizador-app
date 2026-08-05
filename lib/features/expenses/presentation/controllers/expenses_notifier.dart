@@ -206,6 +206,10 @@ class ExpensesNotifier extends ChangeNotifier {
     );
   }
 
+  Future<void> eliminarTransaccion(int id) async {
+    await _expensesRepository.eliminarTransaccion(id);
+  }
+
   @override
   void dispose() {
     _subscription?.cancel();

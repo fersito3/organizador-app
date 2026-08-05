@@ -156,4 +156,9 @@ class ExpensesRepository implements IExpensesRepository {
       }
     }
   }
+
+  @override
+  Future<void> eliminarTransaccion(int id) async {
+    await (db.delete(db.transacciones)..where((t) => t.id.equals(id))).go();
+  }
 }

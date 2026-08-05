@@ -53,6 +53,9 @@ class MockExpensesRepository implements IExpensesRepository {
 
   @override
   Future<void> guardarTransaccionesSincronizadas(List<Transaccion> transacciones) async {}
+
+  @override
+  Future<void> eliminarTransaccion(int id) async {}
 }
 
 void main() {

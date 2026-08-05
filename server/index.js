@@ -76,24 +76,52 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
 
     console.log(`Buscando transacciones en Mercado Pago desde: ${dateFilter} (Límite: ${limit})`);
 
-    // Llamamos a la API de búsqueda de pagos de Mercado Pago
-    // Documentación: https://www.mercadopago.com.ar/developers/es/reference/payments/_payments_search/get
-    const response = await axios.get('https://api.mercadopago.com/v1/payments/search', {
-      headers: {
-        Authorization: `Bearer ${MP_ACCESS_TOKEN}`
-      },
-      params: {
-        begin_date: dateFilter,
-        sort: 'date_created',
-        criteria: 'desc',
-        limit: limit
-      }
-    });
+    // Hacemos dos peticiones en paralelo para traer tanto ingresos (donde somos recolectores) como egresos (donde somos pagadores)
+    const [ingresosResponse, egresosResponse] = await Promise.all([
+      axios.get('https://api.mercadopago.com/v1/payments/search', {
+        headers: {
+          Authorization: `Bearer ${MP_ACCESS_TOKEN}`
+        },
+        params: {
+          begin_date: dateFilter,
+          sort: 'date_created',
+          criteria: 'desc',
+          limit: limit
+        }
+      }).catch(err => {
+        console.error('❌ Error al buscar ingresos de MP:', err.message);
+        return { data: { results: [] } };
+      }),
+      ownerId ? axios.get('https://api.mercadopago.com/v1/payments/search', {
+        headers: {
+          Authorization: `Bearer ${MP_ACCESS_TOKEN}`
+        },
+        params: {
+          'payer.id': ownerId,
+          begin_date: dateFilter,
+          sort: 'date_created',
+          criteria: 'desc',
+          limit: limit
+        }
+      }).catch(err => {
+        console.error('❌ Error al buscar egresos de MP:', err.message);
+        return { data: { results: [] } };
+      }) : Promise.resolve({ data: { results: [] } })
+    ]);
 
-    const results = response.data.results || [];
-    console.log(`[DEBUG] Resultados crudos obtenidos de MP: ${results.length} transacciones.`);
+    const ingresosResults = ingresosResponse.data.results || [];
+    const egresosResults = egresosResponse.data.results || [];
+
+    // Combinamos las listas eliminando duplicados por ID de pago
+    const allResultsMap = new Map();
+    ingresosResults.forEach(item => allResultsMap.set(item.id, item));
+    egresosResults.forEach(item => allResultsMap.set(item.id, item));
+
+    const results = Array.from(allResultsMap.values());
+
+    console.log(`[DEBUG] Resultados crudos combinados obtenidos de MP (Ingresos: ${ingresosResults.length}, Egresos: ${egresosResults.length}): ${results.length} transacciones.`);
     if (results.length > 0) {
-      console.log(`[DEBUG] Primera transacción cruda: ID=${results[0].id}, Estado=${results[0].status}, PayerID=${results[0].payer?.id}, CollectorID=${results[0].collector_id}, Monto=${results[0].transaction_amount}`);
+      console.log(`[DEBUG] Primera transacción cruda combinada: ID=${results[0].id}, Estado=${results[0].status}, PayerID=${results[0].payer?.id}, CollectorID=${results[0].collector_id}, Monto=${results[0].transaction_amount}`);
     }
     
     // Mapeamos y filtramos los pagos aprobados
@@ -101,9 +129,10 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
       .filter(payment => payment.status === 'approved')
       .map(payment => {
         // Determinamos si es un ingreso o egreso
-        // Si el pagador (payer) tiene el ID de nuestra propia cuenta, es un gasto (egreso)
-        const isPayerOwner = ownerId && payment.payer && payment.payer.id === ownerId;
-        const tipo = isPayerOwner ? 'egreso' : 'ingreso';
+        // Si el colector (collector_id) coincide con nuestro ID de cuenta, recibimos el dinero (ingreso)
+        // De lo contrario, pagamos/transferimos a otra cuenta (egreso)
+        const isCollectorOwner = ownerId && payment.collector_id && String(payment.collector_id) === String(ownerId);
+        const tipo = isCollectorOwner ? 'ingreso' : 'egreso';
 
         // Determinamos la persona o entidad involucrada (destinatario o emisor)
         let destinatarioEmisor = 'Mercado Pago';
@@ -129,6 +158,9 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
           proveedor: 'MP'
         };
       });
+
+    // Ordenar las transacciones combinadas por fecha descendente (más recientes primero)
+    mappedTransactions.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
     console.log(`[DEBUG] Transacciones aprobadas mapeadas y enviadas al cliente: ${mappedTransactions.length}`);
 

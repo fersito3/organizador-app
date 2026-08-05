@@ -14,4 +14,5 @@ abstract class IExpensesRepository {
     String? destinatarioEmisor,
   });
   Future<void> guardarTransaccionesSincronizadas(List<Transaccion> transacciones);
+  Future<void> eliminarTransaccion(int id);
 }
