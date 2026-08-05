@@ -112,67 +112,29 @@ class ExpensesRepository implements IExpensesRepository {
         ..where((t) => t.mpPaymentId.equals(item.mpPaymentId!));
       final result = await query.get();
 
-      // Algoritmo de categorización inteligente
-      int catId = idVarios ?? 1; // Fallback por defecto
-      
-      if (item.tipo == TipoTransaccion.ingreso) {
-        catId = idIngreso ?? catId;
-      } else {
-        final desc = item.descripcion.toLowerCase();
-        if (desc.contains('coto') ||
-            desc.contains('pedidosya') ||
-            desc.contains('comida') ||
-            desc.contains('almuerzo') ||
-            desc.contains('restaurant') ||
-            desc.contains('burger') ||
-            desc.contains('mcdonald') ||
-            desc.contains('supermercado') ||
-            desc.contains('carrefour') ||
-            desc.contains('dia') ||
-            desc.contains('rotiseria') ||
-            desc.contains('chino')) {
-          catId = idComida ?? catId;
-        } else if (desc.contains('facu') ||
-            desc.contains('facultad') ||
-            desc.contains('universidad') ||
-            desc.contains('copia') ||
-            desc.contains('apunte') ||
-            desc.contains('libro') ||
-            desc.contains('cuaderno')) {
-          catId = idFacultad ?? catId;
-        } else if (desc.contains('subte') ||
-            desc.contains('colectivo') ||
-            desc.contains('uber') ||
-            desc.contains('cabify') ||
-            desc.contains('didi') ||
-            desc.contains('sube') ||
-            desc.contains('nafta') ||
-            desc.contains('combustible') ||
-            desc.contains('peaje') ||
-            desc.contains('estacionamiento')) {
-          catId = idTransporte ?? catId;
-        } else if (desc.contains('amigo') ||
-            desc.contains('juntada') ||
-            desc.contains('salida') ||
-            desc.contains('junta') ||
-            desc.contains('regalo') ||
-            desc.contains('asado')) {
-          catId = idAmigos ?? catId;
-        } else if (desc.contains('farmacia') ||
-            desc.contains('remedio') ||
-            desc.contains('medicamento') ||
-            desc.contains('pastilla') ||
-            desc.contains('drogeria') ||
-            desc.contains('ibuprofeno') ||
-            desc.contains('doctor') ||
-            desc.contains('consultorio')) {
-          catId = idFarmacia ?? catId;
-        }
-      }
-
       // Buscar si la contraparte es un conocido guardado para auto-resolver conocidoId
-      int? conocidoId;
-      if (item.contraparteMpId != null) {
+    int? conocidoId = item.conocidoId;
+    
+    if (item.contraparteMpId != null) {
+      // Caso A: Si la transacción ya tiene un conocidoId asociado localmente, 
+      // actualizamos el mpUserId de ese conocido para vincularlo a futuro.
+      if (conocidoId != null) {
+        try {
+          final matchedConocido = conocidosExistentes.firstWhere(
+            (c) => c.id == conocidoId,
+          );
+          // Si el conocido aún no tenía guardado su MP ID, se le asigna
+          if (matchedConocido.mpUserId != item.contraparteMpId) {
+            await (db.update(db.conocidos)..where((c) => c.id.equals(conocidoId!)))
+              .write(ConocidosCompanion(
+                mpUserId: Value(item.contraparteMpId),
+              ));
+          }
+        } catch (_) {}
+      } 
+      // Caso B: Si la transacción NO tiene conocidoId, buscamos si algún conocido 
+      // guardado tiene este mismo ID de Mercado Pago.
+      else {
         try {
           final matchedConocido = conocidosExistentes.firstWhere(
             (c) => c.mpUserId == item.contraparteMpId,
@@ -180,48 +142,53 @@ class ExpensesRepository implements IExpensesRepository {
           conocidoId = matchedConocido.id;
         } catch (_) {}
       }
+    }
 
       // Encriptar / guardar nombre de contraparte genérica en la descripción
       // Si la descripción de MP es genérica ("Transferencia") pero viene con destinatarioEmisor, lo adjuntamos a la descripción
       // Esto previene perder quién envió/recibió la plata si no hay un conocido guardado aún!
-      String finalDesc = item.descripcion;
-      if (item.destinatarioEmisor != null && 
-          (finalDesc.toLowerCase() == 'transferencia' || finalDesc.toLowerCase() == 'varios' || finalDesc.trim().isEmpty)) {
-        finalDesc = item.tipo == TipoTransaccion.ingreso
-            ? 'Transferencia de ${item.destinatarioEmisor}'
-            : 'Transferencia a ${item.destinatarioEmisor}';
-      }
+    String finalDesc = 'Transferencia';
+
+    if (conocidoId != null) {
+      try {
+        final conocido = conocidosExistentes.firstWhere((c) => c.id == conocidoId);
+        finalDesc = '${conocido.nombre} ${conocido.apellido}'.trim();
+      } catch (_) {}
+    } else if (item.descripcion.isNotEmpty) {
+      finalDesc = item.descripcion;
+    }
+
+      final catId = idVarios ?? 1;
 
       if (result.isEmpty) {
-        // Insertar en la base de datos SQLite
-        await db.into(db.transacciones).insert(
-              TransaccionesCompanion.insert(
-                descripcion: finalDesc,
-                monto: item.monto,
-                fecha: item.fecha,
-                tipo: item.tipo,
-                categoriaId: catId,
-                mpPaymentId: Value(item.mpPaymentId),
-                proveedor: const Value('MP'),
-                conocidoId: Value(conocidoId),
-                contraparteMpId: Value(item.contraparteMpId),
-              ),
-            );
-      } else {
-        // Auto-curación de transacciones guardadas incorrectamente en el historial
-        final existing = result.first;
-        if (existing.tipo != item.tipo || 
-            existing.descripcion != finalDesc ||
-            existing.conocidoId != conocidoId) {
-          await (db.update(db.transacciones)..where((t) => t.id.equals(existing.id)))
-            .write(TransaccionesCompanion(
-              tipo: Value(item.tipo),
-              descripcion: Value(finalDesc),
-              categoriaId: Value(catId),
+      await db.into(db.transacciones).insert(
+            TransaccionesCompanion.insert(
+              descripcion: finalDesc,
+              monto: item.monto,
+              fecha: item.fecha,
+              tipo: item.tipo,
+              categoriaId: catId,
+              mpPaymentId: Value(item.mpPaymentId),
+              proveedor: const Value('MP'),
               conocidoId: Value(conocidoId),
               contraparteMpId: Value(item.contraparteMpId),
-            ));
-        }
+            ),
+          );
+    } else {
+      final existing = result.first;
+      if (existing.tipo != item.tipo || 
+          existing.descripcion != finalDesc ||
+          existing.conocidoId != conocidoId ||
+          existing.categoriaId != catId) {
+        await (db.update(db.transacciones)..where((t) => t.id.equals(existing.id)))
+          .write(TransaccionesCompanion(
+            tipo: Value(item.tipo),
+            descripcion: Value(finalDesc),
+            categoriaId: Value(catId),
+            conocidoId: Value(conocidoId),
+            contraparteMpId: Value(item.contraparteMpId),
+          ));
+      }
       }
     }
   }

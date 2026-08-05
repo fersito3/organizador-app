@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 // Guardamos en memoria el ID de la cuenta dueña de la credencial
-let ownerId = null;
+let ownerId = 446191311;
 
 // Helper para obtener el ID de la propia cuenta usando el token de acceso
 async function fetchOwnerId() {
