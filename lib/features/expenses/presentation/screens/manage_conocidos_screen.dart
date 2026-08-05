@@ -15,6 +15,14 @@ class _ManageConocidosScreenState extends State<ManageConocidosScreen> {
   String _searchQuery = '';
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ExpensesNotifier>(context, listen: false).cargarConocidos();
+    });
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
