@@ -61,6 +61,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return list;
   }
 
+  Color _obtenerColorTipoTarea(TipoTarea tipo) {
+    switch (tipo) {
+      case TipoTarea.parcial:
+        return const Color(0xFFEF4444); // Red 500
+      case TipoTarea.entrega:
+        return const Color(0xFFF97316); // Orange 500
+      case TipoTarea.TP:
+        return const Color(0xFF3B82F6); // Blue 500
+      case TipoTarea.estudio:
+        return const Color(0xFFEC4899); // Pink 500 (Cumpleaños)
+      case TipoTarea.deudas:
+        return const Color(0xFFF59E0B); // Amber 500
+      case TipoTarea.otro:
+        return const Color(0xFF06B6D4); // Cyan 500 (Recuerdo / Notas)
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final calendarNotifier = Provider.of<CalendarNotifier>(context);
@@ -200,11 +217,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
           backgroundColor: const Color(0xFF8B5CF6),
           foregroundColor: Colors.white,
           child: const Icon(Icons.add_rounded, size: 28),
-          onPressed: () => _mostrarAddEventBottomSheet(
+          onPressed: () => _mostrarAddOptionsBottomSheet(
             context,
             selectedDate: selectedDate,
-            notifier: calendarNotifier,
-            expNotifier: expensesNotifier,
+            calendarNotifier: calendarNotifier,
+            tasksNotifier: tasksNotifier,
+            expensesNotifier: expensesNotifier,
           ),
         ),
       ),
@@ -224,9 +242,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final finSemana = diasDeLaSemana.last;
     final hoy = DateTime.now();
 
-    // Rango de horas a mostrar (07:00 a 22:00 hs -> 16 slots)
+    // Franjas horarias ultrachatas (slotHeight = 36.0 px)
     final horas = List.generate(16, (index) => index + 7);
-    const double slotHeight = 64.0;
+    const double slotHeight = 36.0;
     final double totalHeight = horas.length * slotHeight;
 
     return Column(
@@ -283,18 +301,38 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
         ),
 
-        // Cabecera de días de la semana (Lun 3, Mar 4, ...)
+        // Cabecera de días de la semana + Badges a TODO COLOR Y RELLENO abajo del día
         Container(
           color: const Color(0xFFF1F5F9),
           padding: const EdgeInsets.only(left: 50, right: 8, top: 8, bottom: 8),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: diasDeLaSemana.map((date) {
               final esHoy = date.year == hoy.year && date.month == hoy.month && date.day == hoy.day;
               
-              final tareasCount = tasksNotifier.tareas.where((t) =>
+              // 1. Contar eventos del día
+              final eventosCount = calendarNotifier.eventos.where((e) {
+                final inicio = e.fechaInicio;
+                final inicioOnly = DateTime(inicio.year, inicio.month, inicio.day);
+                final dayOnly = DateTime(date.year, date.month, date.day);
+                if (dayOnly.isBefore(inicioOnly)) return false;
+                if (e.esRecurrente && e.patronRecurrencia == 'WEEKLY') {
+                  return dayOnly.weekday == inicioOnly.weekday;
+                }
+                final finOnly = DateTime(e.fechaFin.year, e.fechaFin.month, e.fechaFin.day);
+                return !dayOnly.isAfter(finOnly);
+              }).length;
+
+              // 2. Agrupar tareas del día por tipo
+              final tareasDelDia = tasksNotifier.tareas.where((t) =>
                   t.fecha.year == date.year &&
                   t.fecha.month == date.month &&
-                  t.fecha.day == date.day).length;
+                  t.fecha.day == date.day).toList();
+
+              final Map<TipoTarea, int> conteoPorTipo = {};
+              for (final t in tareasDelDia) {
+                conteoPorTipo[t.tipo] = (conteoPorTipo[t.tipo] ?? 0) + 1;
+              }
 
               return Expanded(
                 child: Column(
@@ -323,20 +361,69 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         ),
                       ),
                     ),
-                    if (tareasCount > 0) ...[
-                      const SizedBox(height: 2),
+                    const SizedBox(height: 4),
+
+                    // Badge de Eventos (Relleno morado)
+                    if (eventosCount > 0) ...[
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        margin: const EdgeInsets.only(bottom: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF59E0B),
+                          color: const Color(0xFF8B5CF6),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          '$tareasCount Tareas',
+                          '$eventosCount ${eventosCount == 1 ? 'Evento' : 'Eventos'}',
                           style: const TextStyle(fontSize: 8, color: Colors.white, fontWeight: FontWeight.bold),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
+
+                    // Badges de Tareas por Tipo (FULL COLOR Y RELLENO)
+                    ...conteoPorTipo.entries.map((entry) {
+                      final tipo = entry.key;
+                      final count = entry.value;
+                      final tipoColor = _obtenerColorTipoTarea(tipo);
+
+                      String nombreTipo = 'Tarea';
+                      switch (tipo) {
+                        case TipoTarea.parcial:
+                          nombreTipo = count == 1 ? 'Parcial' : 'Parciales';
+                          break;
+                        case TipoTarea.entrega:
+                          nombreTipo = count == 1 ? 'Entrega' : 'Entregas';
+                          break;
+                        case TipoTarea.TP:
+                          nombreTipo = count == 1 ? 'TP' : 'TPs';
+                          break;
+                        case TipoTarea.estudio:
+                          nombreTipo = count == 1 ? 'Cumpleaños' : 'Cumpleaños';
+                          break;
+                        case TipoTarea.deudas:
+                          nombreTipo = count == 1 ? 'Deuda' : 'Deudas';
+                          break;
+                        case TipoTarea.otro:
+                          nombreTipo = count == 1 ? 'Recuerdo' : 'Recuerdos/Notas';
+                          break;
+                      }
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: tipoColor, // RELLENO DE COLOR COMPLETO
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '$count $nombreTipo',
+                          style: const TextStyle(fontSize: 8, color: Colors.white, fontWeight: FontWeight.bold),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }).toList(),
                   ],
                 ),
               );
@@ -361,7 +448,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           child: Text(
                             '${h.toString().padLeft(2, '0')}:00',
                             style: const TextStyle(
-                              fontSize: 11,
+                              fontSize: 10,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF94A3B8),
                             ),
@@ -376,7 +463,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 Expanded(
                   child: Row(
                     children: diasDeLaSemana.map((dayDate) {
-                      // 1. Obtener todos los eventos que aplican a este día
                       final eventosDelDia = calendarNotifier.eventos.where((e) {
                         final inicio = e.fechaInicio;
                         final inicioOnly = DateTime(inicio.year, inicio.month, inicio.day);
@@ -391,7 +477,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         return !dayOnly.isAfter(finOnly);
                       }).toList();
 
-                      // 2. Obtener todas las tareas de este día
                       final tareasDelDia = tasksNotifier.tareas.where((t) {
                         return t.fecha.year == dayDate.year &&
                             t.fecha.month == dayDate.month &&
@@ -413,12 +498,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 children: horas.map((h) {
                                   return GestureDetector(
                                     onTap: () {
-                                      _mostrarAddEventBottomSheet(
+                                      _mostrarAddOptionsBottomSheet(
                                         context,
                                         selectedDate: dayDate,
                                         initialHour: h,
-                                        notifier: calendarNotifier,
-                                        expNotifier: expensesNotifier,
+                                        calendarNotifier: calendarNotifier,
+                                        tasksNotifier: tasksNotifier,
+                                        expensesNotifier: expensesNotifier,
                                       );
                                     },
                                     child: Container(
@@ -433,16 +519,68 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 }).toList(),
                               ),
 
-                              // Capa 2: Rectángulos continuos de Eventos (Spanning multi-hour blocks)
+                              // Capa 2: RECTÁNGULOS DE TAREAS QUE RECORREN TODO EL DÍA EN LA MATRIZ (SIN RELLENO, SOLO BORDES DE COLOR)
+                              ...tareasDelDia.asMap().entries.map((entry) {
+                                final index = entry.key;
+                                final t = entry.value;
+                                final tipoColor = _obtenerColorTipoTarea(t.tipo);
+
+                                double leftPadding = 1.0 + (index * 2.0);
+                                double rightPadding = 1.0 + (index * 2.0);
+                                double topPadding = 1.0 + (index * 16.0);
+
+                                return Positioned(
+                                  top: topPadding,
+                                  bottom: 1.0,
+                                  left: leftPadding,
+                                  right: rightPadding,
+                                  child: GestureDetector(
+                                    onTap: () => _mostrarOpcionesTarea(context, t, tasksNotifier),
+                                    child: Container(
+                                      padding: const EdgeInsets.only(top: 2, left: 3, right: 3),
+                                      decoration: BoxDecoration(
+                                        color: Colors.transparent, // SIN RELLENO PARA QUE SE VEAN LOS EVENTOS EN EL CENTRO
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: t.completada ? Colors.green : tipoColor,
+                                          width: 2.0, // BORDE DE COLOR DEL TIPO DE TAREA
+                                        ),
+                                      ),
+                                      child: Align(
+                                        alignment: Alignment.topCenter,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+                                          decoration: BoxDecoration(
+                                            color: (t.completada ? Colors.green : tipoColor).withOpacity(0.95),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            t.titulo,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 7.5,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+
+                              // Capa 3: Rectángulos continuos de Eventos (Multi-hour blocks FULL LLENOS DE COLOR)
                               ...eventosDelDia.map((e) {
                                 double startHourFloat = e.fechaInicio.hour + (e.fechaInicio.minute / 60.0);
                                 double endHourFloat = e.fechaFin.hour + (e.fechaFin.minute / 60.0);
                                 
                                 if (endHourFloat <= startHourFloat) {
-                                  endHourFloat = startHourFloat + 1.0; // Duración mínima 1 hora
+                                  endHourFloat = startHourFloat + 1.0;
                                 }
 
-                                // Ajustar al rango de horas visible (07:00 a 23:00)
                                 double clampedStart = startHourFloat.clamp(7.0, 23.0);
                                 double clampedEnd = endHourFloat.clamp(7.0, 23.0);
 
@@ -454,29 +592,36 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 final horaInicioStr = '${e.fechaInicio.hour.toString().padLeft(2, '0')}:${e.fechaInicio.minute.toString().padLeft(2, '0')}';
                                 final horaFinStr = '${e.fechaFin.hour.toString().padLeft(2, '0')}:${e.fechaFin.minute.toString().padLeft(2, '0')}';
 
+                                double leftMargin = tareasDelDia.isNotEmpty ? 4.0 : 2.0;
+
                                 return Positioned(
                                   top: topOffset + 1.0,
-                                  left: 1.0,
-                                  right: 1.0,
+                                  left: leftMargin,
+                                  right: leftMargin,
                                   height: blockHeight - 2.0,
                                   child: GestureDetector(
                                     onTap: () {
-                                      _mostrarOpcionesEvento(context, e, calendarNotifier, expensesNotifier);
+                                      _mostrarOpcionesEvento(
+                                        context,
+                                        e,
+                                        calendarNotifier,
+                                        expensesNotifier,
+                                      );
                                     },
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
                                       decoration: BoxDecoration(
                                         gradient: const LinearGradient(
                                           colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                         ),
-                                        borderRadius: BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(6),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: const Color(0xFF8B5CF6).withOpacity(0.35),
-                                            blurRadius: 4,
-                                            offset: const Offset(0, 2),
+                                            color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                                            blurRadius: 3,
+                                            offset: const Offset(0, 1),
                                           ),
                                         ],
                                       ),
@@ -488,87 +633,33 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                             e.titulo,
                                             style: const TextStyle(
                                               color: Colors.white,
-                                              fontSize: 10,
+                                              fontSize: 9.0,
                                               fontWeight: FontWeight.bold,
                                             ),
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                           ),
-                                          const SizedBox(height: 1),
                                           Text(
                                             '$horaInicioStr - $horaFinStr',
                                             style: const TextStyle(
                                               color: Colors.white70,
-                                              fontSize: 8,
+                                              fontSize: 7.5,
                                               fontWeight: FontWeight.w500,
                                             ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
-                                          if (e.descripcion != null && e.descripcion!.isNotEmpty && blockHeight >= 70) ...[
-                                            const SizedBox(height: 2),
+                                          if (e.descripcion != null && e.descripcion!.isNotEmpty && blockHeight >= 45) ...[
                                             Text(
                                               e.descripcion!,
                                               style: const TextStyle(
                                                 color: Colors.white60,
-                                                fontSize: 8,
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-
-                              // Capa 3: Tareas / Parciales / Deudas visibles en el horario
-                              ...tareasDelDia.map((t) {
-                                int taskHour = (t.fecha.hour >= 7 && t.fecha.hour <= 22) ? t.fecha.hour : 8;
-                                double topOffset = (taskHour - 7.0) * slotHeight + 2.0;
-
-                                return Positioned(
-                                  top: topOffset,
-                                  left: 2.0,
-                                  right: 2.0,
-                                  height: 26.0,
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      _mostrarOpcionesTarea(context, t, tasksNotifier);
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: t.completada ? Colors.green.shade600 : const Color(0xFFF59E0B),
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(color: Colors.white, width: 1),
-                                        boxShadow: const [
-                                          BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1)),
-                                        ],
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            t.completada ? Icons.check_circle : Icons.assignment_rounded,
-                                            size: 10,
-                                            color: Colors.white,
-                                          ),
-                                          const SizedBox(width: 2),
-                                          Expanded(
-                                            child: Text(
-                                              t.titulo,
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 9,
-                                                fontWeight: FontWeight.bold,
-                                                decoration: t.completada ? TextDecoration.lineThrough : null,
+                                                fontSize: 7.0,
                                               ),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                             ),
-                                          ),
+                                          ],
                                         ],
                                       ),
                                     ),
@@ -590,8 +681,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  // Modal para ver opciones de tarea desde el horario
-  void _mostrarOpcionesTarea(BuildContext context, Tarea t, TasksNotifier notifier) {
+  // ===========================================================================
+  // 🔘 BOTTOM SHEET DE OPCIONES PARA AGREGAR (Evento o Tarea)
+  // ===========================================================================
+  void _mostrarAddOptionsBottomSheet(
+    BuildContext context, {
+    required DateTime selectedDate,
+    int? initialHour,
+    required CalendarNotifier calendarNotifier,
+    required TasksNotifier tasksNotifier,
+    required ExpensesNotifier expensesNotifier,
+  }) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -602,44 +702,56 @@ class _CalendarScreenState extends State<CalendarScreen> {
           padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                t.titulo,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Fecha: ${t.fecha.day}/${t.fecha.month}/${t.fecha.year} a las ${t.fecha.hour.toString().padLeft(2, '0')}:${t.fecha.minute.toString().padLeft(2, '0')} hs',
-                style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
-              ),
-              if (t.descripcion != null && t.descripcion!.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(
-                  t.descripcion!,
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF334155)),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE2E8F0),
+                  borderRadius: BorderRadius.circular(2),
                 ),
-              ],
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        notifier.toggleCompletada(t);
-                        Navigator.pop(context);
-                      },
-                      icon: Icon(t.completada ? Icons.undo_rounded : Icons.check_circle_rounded),
-                      label: Text(t.completada ? 'Marcar Pendiente' : 'Marcar Completada'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: t.completada ? Colors.orange : Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                  ),
-                ],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                '¿Qué deseas agregar?',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFF8B5CF6),
+                  child: Icon(Icons.event_rounded, color: Colors.white),
+                ),
+                title: const Text('Agregar Evento / Cursada', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Clases semanales, reuniones o actividades'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _mostrarAddEventBottomSheet(
+                    context,
+                    selectedDate: selectedDate,
+                    initialHour: initialHour,
+                    notifier: calendarNotifier,
+                    expNotifier: expensesNotifier,
+                  );
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFF59E0B),
+                  child: Icon(Icons.assignment_rounded, color: Colors.white),
+                ),
+                title: const Text('Agregar Tarea / Evaluación', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Parciales, entregas, TPs o compromisos'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _mostrarAddTareaBottomSheet(
+                    context,
+                    selectedDate: selectedDate,
+                    initialHour: initialHour,
+                    notifier: tasksNotifier,
+                  );
+                },
               ),
             ],
           ),
@@ -648,31 +760,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  // Filtrar eventos que ocurren en una fecha y comienzan en una hora dada
-  List<Evento> _obtenerEventosParaSlot(DateTime dayDate, int hour, List<Evento> todosEventos) {
-    return todosEventos.where((e) {
-      final inicio = e.fechaInicio;
-      final inicioOnly = DateTime(inicio.year, inicio.month, inicio.day);
-      final dayOnly = DateTime(dayDate.year, dayDate.month, dayDate.day);
-
-      if (dayOnly.isBefore(inicioOnly)) return false;
-
-      bool coincideDia = false;
-      if (e.esRecurrente && e.patronRecurrencia == 'WEEKLY') {
-        coincideDia = (dayOnly.weekday == inicioOnly.weekday);
-      } else {
-        final finOnly = DateTime(e.fechaFin.year, e.fechaFin.month, e.fechaFin.day);
-        coincideDia = !dayOnly.isAfter(finOnly);
-      }
-
-      if (!coincideDia) return false;
-
-      // El evento comienza en este slot de hora
-      return e.fechaInicio.hour == hour;
-    }).toList();
-  }
-
-  // Modal para ver detalles / eliminar evento desde la vista de horario
+  // Modal para ver opciones de evento (Editar / Eliminar)
   void _mostrarOpcionesEvento(
     BuildContext context,
     Evento e,
@@ -718,6 +806,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _mostrarAddEventBottomSheet(
+                          context,
+                          selectedDate: e.fechaInicio,
+                          eventoToEdit: e,
+                          notifier: notifier,
+                          expNotifier: expNotifier,
+                        );
+                      },
+                      icon: const Icon(Icons.edit_rounded, color: Color(0xFF8B5CF6)),
+                      label: const Text('Editar', style: TextStyle(color: Color(0xFF8B5CF6))),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
                       onPressed: () async {
                         Navigator.pop(context);
                         await notifier.eliminarEvento(e.id);
@@ -735,6 +844,99 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Modal para ver opciones de tarea (Marcar / Editar / Eliminar)
+  void _mostrarOpcionesTarea(BuildContext context, Tarea t, TasksNotifier notifier) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                t.titulo,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Fecha: ${t.fecha.day}/${t.fecha.month}/${t.fecha.year} a las ${t.fecha.hour.toString().padLeft(2, '0')}:${t.fecha.minute.toString().padLeft(2, '0')} hs',
+                style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+              ),
+              if (t.descripcion != null && t.descripcion!.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  t.descripcion!,
+                  style: const TextStyle(fontSize: 14, color: Color(0xFF334155)),
+                ),
+              ],
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        notifier.toggleCompletada(t);
+                        Navigator.pop(context);
+                      },
+                      icon: Icon(t.completada ? Icons.undo_rounded : Icons.check_circle_rounded),
+                      label: Text(t.completada ? 'Pendiente' : 'Completar'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: t.completada ? Colors.orange : Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _mostrarAddTareaBottomSheet(
+                        context,
+                        selectedDate: t.fecha,
+                        tareaToEdit: t,
+                        notifier: notifier,
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Icon(Icons.edit_rounded, color: Color(0xFF8B5CF6)),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      await notifier.eliminarTarea(t.id);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Tarea eliminada.'), backgroundColor: Colors.red),
+                        );
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                      side: const BorderSide(color: Colors.red),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Icon(Icons.delete_outline_rounded, color: Colors.red),
                   ),
                 ],
               ),
@@ -1104,8 +1306,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
         badgeColor = Colors.blue;
         break;
       case TipoTarea.estudio:
-        badgeText = 'Estudio';
-        badgeColor = Colors.purple;
+        badgeText = 'Cumpleaños 🎂';
+        badgeColor = const Color(0xFFEC4899);
         break;
       case TipoTarea.deudas:
         final monto = notifier.obtenerMontoDeuda(t);
@@ -1113,8 +1315,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
         badgeColor = const Color(0xFFF59E0B);
         break;
       case TipoTarea.otro:
-        badgeText = 'Otro';
-        badgeColor = Colors.blueGrey;
+        badgeText = 'Recuerdo / Notas 📝';
+        badgeColor = const Color(0xFF06B6D4);
         break;
     }
 
@@ -1181,6 +1383,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     BuildContext context, {
     required DateTime selectedDate,
     int? initialHour,
+    Evento? eventoToEdit,
     required CalendarNotifier notifier,
     required ExpensesNotifier expNotifier,
   }) {
@@ -1192,23 +1395,51 @@ class _CalendarScreenState extends State<CalendarScreen> {
         return _AddEventModal(
           selectedDate: selectedDate,
           initialHour: initialHour,
+          eventoToEdit: eventoToEdit,
           notifier: notifier,
           expNotifier: expNotifier,
         );
       },
     );
   }
+
+  void _mostrarAddTareaBottomSheet(
+    BuildContext context, {
+    required DateTime selectedDate,
+    int? initialHour,
+    Tarea? tareaToEdit,
+    required TasksNotifier notifier,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return _AddTareaModal(
+          selectedDate: selectedDate,
+          initialHour: initialHour,
+          tareaToEdit: tareaToEdit,
+          notifier: notifier,
+        );
+      },
+    );
+  }
 }
 
+// =============================================================================
+// 📝 MODAL PARA AGREGAR / EDITAR EVENTOS
+// =============================================================================
 class _AddEventModal extends StatefulWidget {
   final DateTime selectedDate;
   final int? initialHour;
+  final Evento? eventoToEdit;
   final CalendarNotifier notifier;
   final ExpensesNotifier expNotifier;
 
   const _AddEventModal({
     required this.selectedDate,
     this.initialHour,
+    this.eventoToEdit,
     required this.notifier,
     required this.expNotifier,
   });
@@ -1231,9 +1462,19 @@ class _AddEventModalState extends State<_AddEventModal> {
   @override
   void initState() {
     super.initState();
-    final startH = widget.initialHour ?? 9;
-    _horaInicio = TimeOfDay(hour: startH, minute: 0);
-    _horaFin = TimeOfDay(hour: (startH + 1) % 24, minute: 0);
+    if (widget.eventoToEdit != null) {
+      final e = widget.eventoToEdit!;
+      _tituloController.text = e.titulo;
+      _descripcionController.text = e.descripcion ?? '';
+      _horaInicio = TimeOfDay(hour: e.fechaInicio.hour, minute: e.fechaInicio.minute);
+      _horaFin = TimeOfDay(hour: e.fechaFin.hour, minute: e.fechaFin.minute);
+      _esRecurrente = e.esRecurrente;
+      _selectedTransaccionId = e.transaccionId;
+    } else {
+      final startH = widget.initialHour ?? 9;
+      _horaInicio = TimeOfDay(hour: startH, minute: 0);
+      _horaFin = TimeOfDay(hour: (startH + 1) % 24, minute: 0);
+    }
   }
 
   @override
@@ -1264,6 +1505,8 @@ class _AddEventModalState extends State<_AddEventModal> {
 
   @override
   Widget build(BuildContext context) {
+    final esEdicion = widget.eventoToEdit != null;
+
     return Container(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -1297,9 +1540,9 @@ class _AddEventModalState extends State<_AddEventModal> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text(
-                    'Agregar Evento / Cursada',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  Text(
+                    esEdicion ? 'Editar Evento / Cursada' : 'Agregar Evento / Cursada',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                   const SizedBox(height: 16),
 
@@ -1429,23 +1672,24 @@ class _AddEventModalState extends State<_AddEventModal> {
                           return;
                         }
 
-                        await widget.notifier.guardarEvento(
-                          EventosCompanion.insert(
-                            titulo: _tituloController.text.trim(),
-                            descripcion: drift.Value(_descripcionController.text.trim()),
-                            fechaInicio: start,
-                            fechaFin: end,
-                            esRecurrente: drift.Value(_esRecurrente),
-                            patronRecurrencia: drift.Value(_esRecurrente ? 'WEEKLY' : null),
-                            transaccionId: drift.Value(_selectedTransaccionId),
-                          ),
+                        final companion = EventosCompanion(
+                          id: esEdicion ? drift.Value(widget.eventoToEdit!.id) : const drift.Value.absent(),
+                          titulo: drift.Value(_tituloController.text.trim()),
+                          descripcion: drift.Value(_descripcionController.text.trim()),
+                          fechaInicio: drift.Value(start),
+                          fechaFin: drift.Value(end),
+                          esRecurrente: drift.Value(_esRecurrente),
+                          patronRecurrencia: drift.Value(_esRecurrente ? 'WEEKLY' : null),
+                          transaccionId: drift.Value(_selectedTransaccionId),
                         );
+
+                        await widget.notifier.guardarEvento(companion);
 
                         if (mounted) {
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Evento creado con éxito.'),
+                            SnackBar(
+                              content: Text(esEdicion ? 'Evento actualizado.' : 'Evento creado con éxito.'),
                               backgroundColor: Colors.green,
                             ),
                           );
@@ -1458,9 +1702,226 @@ class _AddEventModalState extends State<_AddEventModal> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
-                    child: const Text(
-                      'Guardar Evento',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    child: Text(
+                      esEdicion ? 'Guardar Cambios' : 'Guardar Evento',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// 📝 MODAL PARA AGREGAR / EDITAR TAREAS DESDE EL CALENDARIO
+// =============================================================================
+class _AddTareaModal extends StatefulWidget {
+  final DateTime selectedDate;
+  final int? initialHour;
+  final Tarea? tareaToEdit;
+  final TasksNotifier notifier;
+
+  const _AddTareaModal({
+    required this.selectedDate,
+    this.initialHour,
+    this.tareaToEdit,
+    required this.notifier,
+  });
+
+  @override
+  State<_AddTareaModal> createState() => _AddTareaModalState();
+}
+
+class _AddTareaModalState extends State<_AddTareaModal> {
+  final _formKey = GlobalKey<FormState>();
+  final _tituloController = TextEditingController();
+  final _descripcionController = TextEditingController();
+
+  TipoTarea _tipoSeleccionado = TipoTarea.entrega;
+  late TimeOfDay _horaVencimiento;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.tareaToEdit != null) {
+      final t = widget.tareaToEdit!;
+      _tituloController.text = t.titulo;
+      _descripcionController.text = t.descripcion ?? '';
+      _tipoSeleccionado = t.tipo;
+      _horaVencimiento = TimeOfDay(hour: t.fecha.hour, minute: t.fecha.minute);
+    } else {
+      final startH = widget.initialHour ?? 12;
+      _horaVencimiento = TimeOfDay(hour: startH, minute: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _tituloController.dispose();
+    _descripcionController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _seleccionarHora(BuildContext context) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _horaVencimiento,
+    );
+    if (picked != null) {
+      setState(() {
+        _horaVencimiento = picked;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final esEdicion = widget.tareaToEdit != null;
+
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(28),
+          topRight: Radius.circular(28),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    esEdicion ? 'Editar Tarea / Evaluación' : 'Agregar Tarea / Evaluación',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _tituloController,
+                    decoration: const InputDecoration(
+                      labelText: 'Título de la Tarea / Evaluación',
+                      prefixIcon: Icon(Icons.assignment_rounded),
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Ingresa un título' : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  DropdownButtonFormField<TipoTarea>(
+                    value: _tipoSeleccionado,
+                    decoration: const InputDecoration(
+                      labelText: 'Tipo de Actividad',
+                      prefixIcon: Icon(Icons.category_rounded),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: TipoTarea.entrega, child: Text('Entrega de Trabajo')),
+                      DropdownMenuItem(value: TipoTarea.parcial, child: Text('Parcial / Examen')),
+                      DropdownMenuItem(value: TipoTarea.TP, child: Text('Trabajo Práctico (TP)')),
+                      DropdownMenuItem(value: TipoTarea.estudio, child: Text('Cumpleaños 🎂')),
+                      DropdownMenuItem(value: TipoTarea.otro, child: Text('Recuerdo / Notas 📝')),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          _tipoSeleccionado = val;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _descripcionController,
+                    decoration: const InputDecoration(
+                      labelText: 'Notas / Detalles (Opcional)',
+                      prefixIcon: Icon(Icons.notes_rounded),
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 16),
+
+                  OutlinedButton.icon(
+                    onPressed: () => _seleccionarHora(context),
+                    icon: const Icon(Icons.access_time_rounded),
+                    label: Text('Hora de vencimiento: ${_horaVencimiento.format(context)}'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (_formKey.currentState!.validate()) {
+                        final baseDate = widget.selectedDate;
+                        final fechaCompleta = DateTime(
+                          baseDate.year,
+                          baseDate.month,
+                          baseDate.day,
+                          _horaVencimiento.hour,
+                          _horaVencimiento.minute,
+                        );
+
+                        final companion = TareasCompanion(
+                          id: esEdicion ? drift.Value(widget.tareaToEdit!.id) : const drift.Value.absent(),
+                          titulo: drift.Value(_tituloController.text.trim()),
+                          descripcion: drift.Value(_descripcionController.text.trim()),
+                          fecha: drift.Value(fechaCompleta),
+                          tipo: drift.Value(_tipoSeleccionado),
+                          completada: esEdicion ? drift.Value(widget.tareaToEdit!.completada) : const drift.Value(false),
+                        );
+
+                        await widget.notifier.guardarTarea(companion);
+
+                        if (mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(esEdicion ? 'Tarea actualizada.' : 'Tarea agregada con éxito.'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF59E0B),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: Text(
+                      esEdicion ? 'Guardar Cambios' : 'Guardar Tarea',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                   ),
                 ],

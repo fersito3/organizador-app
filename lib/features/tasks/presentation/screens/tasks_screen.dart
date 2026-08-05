@@ -109,11 +109,11 @@ class _TasksScreenState extends State<TasksScreen> {
                 const SizedBox(width: 8),
                 _buildTypeChip(tasksNotifier, TipoTarea.TP, 'TPs'),
                 const SizedBox(width: 8),
-                _buildTypeChip(tasksNotifier, TipoTarea.estudio, 'Estudio'),
+                _buildTypeChip(tasksNotifier, TipoTarea.estudio, 'Cumpleaños 🎂'),
                 const SizedBox(width: 8),
                 _buildTypeChip(tasksNotifier, TipoTarea.deudas, 'Deudas 💵'),
                 const SizedBox(width: 8),
-                _buildTypeChip(tasksNotifier, TipoTarea.otro, 'Otros'),
+                _buildTypeChip(tasksNotifier, TipoTarea.otro, 'Recuerdos / Notas 📝'),
               ],
             ),
           ),
@@ -220,8 +220,8 @@ class _TasksScreenState extends State<TasksScreen> {
         badgeColor = Colors.blue;
         break;
       case TipoTarea.estudio:
-        badgeText = 'Estudio';
-        badgeColor = Colors.purple;
+        badgeText = 'Cumpleaños 🎂';
+        badgeColor = const Color(0xFFEC4899);
         break;
       case TipoTarea.deudas:
         final monto = notifier.obtenerMontoDeuda(t);
@@ -229,8 +229,8 @@ class _TasksScreenState extends State<TasksScreen> {
         badgeColor = const Color(0xFFF59E0B);
         break;
       case TipoTarea.otro:
-        badgeText = 'Otro';
-        badgeColor = Colors.blueGrey;
+        badgeText = 'Recuerdo / Notas 📝';
+        badgeColor = const Color(0xFF06B6D4);
         break;
     }
 
@@ -461,9 +461,9 @@ class _AddTaskModalState extends State<_AddTaskModal> {
                     DropdownMenuItem(value: TipoTarea.parcial, child: Text('Parcial', overflow: TextOverflow.ellipsis)),
                     DropdownMenuItem(value: TipoTarea.entrega, child: Text('Entrega', overflow: TextOverflow.ellipsis)),
                     DropdownMenuItem(value: TipoTarea.TP, child: Text('Trabajo Práctico (TP)', overflow: TextOverflow.ellipsis)),
-                    DropdownMenuItem(value: TipoTarea.estudio, child: Text('Sesión de Estudio', overflow: TextOverflow.ellipsis)),
+                    DropdownMenuItem(value: TipoTarea.estudio, child: Text('Cumpleaños 🎂', overflow: TextOverflow.ellipsis)),
                     DropdownMenuItem(value: TipoTarea.deudas, child: Text('Deuda 💵', overflow: TextOverflow.ellipsis)),
-                    DropdownMenuItem(value: TipoTarea.otro, child: Text('Otro / Notas', overflow: TextOverflow.ellipsis)),
+                    DropdownMenuItem(value: TipoTarea.otro, child: Text('Recuerdo / Notas 📝', overflow: TextOverflow.ellipsis)),
                   ],
                   onChanged: (val) {
                     if (val != null) {
