@@ -89,6 +89,7 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
         params: {
           range: 'date_created',
           begin_date: dateString,
+          end_date: 'NOW',
           sort: 'date_created',
           criteria: 'desc',
           limit: limit
@@ -105,6 +106,7 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
           'payer.id': ownerId,
           range: 'date_created',
           begin_date: dateString,
+          end_date: 'NOW',
           sort: 'date_created',
           criteria: 'desc',
           limit: limit
