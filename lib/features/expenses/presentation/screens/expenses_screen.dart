@@ -51,6 +51,13 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.people_outline_rounded, color: Color(0xFF0F172A)),
+            tooltip: 'Administrar Contactos',
+            onPressed: () {
+              Navigator.pushNamed(context, AppRoutes.routeManageConocidos);
+            },
+          ),
           Consumer<ExpensesNotifier>(
             builder: (context, notifier, child) {
               if (notifier.isSyncing) {
@@ -392,11 +399,13 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   child: Row(
                     children: [
                       // Circular profile picture or fallback arrow icon
+                      // Circular profile picture or fallback arrow icon
                       Builder(
                         builder: (context) {
-                          final tieneEntidad = item.destinatarioEmisor != null && item.destinatarioEmisor!.isNotEmpty;
-                          if (tieneEntidad) {
-                            final initialsUrl = 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(item.destinatarioEmisor!)}&background=0F172A&color=ffffff&bold=true&size=128';
+                          final conocido = notifier.findConocidoById(item.conocidoId);
+                          final tieneConocido = conocido != null;
+                          if (tieneConocido) {
+                            final initialsUrl = 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(conocido.nombreCompleto)}&background=0F172A&color=ffffff&bold=true&size=128';
                             return ClipRRect(
                               borderRadius: BorderRadius.circular(22),
                               child: Image.network(
@@ -482,28 +491,35 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                                 ),
                               ],
                             ),
-                            if (item.destinatarioEmisor != null &&
-                                item.destinatarioEmisor!.isNotEmpty) ...[
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  const Icon(Icons.person_outline_rounded, size: 12, color: Color(0xFF64748B)),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      item.destinatarioEmisor!,
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        color: Color(0xFF475569),
-                                        fontStyle: FontStyle.italic,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                            Builder(
+                              builder: (context) {
+                                final conocido = notifier.findConocidoById(item.conocidoId);
+                                if (conocido != null) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 6.0),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.person_outline_rounded, size: 12, color: Color(0xFF64748B)),
+                                        const SizedBox(width: 4),
+                                        Expanded(
+                                          child: Text(
+                                            conocido.nombreCompleto,
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Color(0xFF475569),
+                                              fontStyle: FontStyle.italic,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ]
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              },
+                            ),
                           ],
                         ),
                       ),
@@ -604,12 +620,14 @@ class _TransactionDetailModalState extends State<_TransactionDetailModal> {
   bool _isEditing = false;
   late TextEditingController _descripcionController;
   int? _selectedCategoriaId;
+  int? _selectedConocidoId;
 
   @override
   void initState() {
     super.initState();
     _descripcionController = TextEditingController(text: widget.item.descripcion);
     _selectedCategoriaId = widget.item.categoriaId;
+    _selectedConocidoId = widget.item.conocidoId;
   }
 
   @override
@@ -753,51 +771,51 @@ class _TransactionDetailModalState extends State<_TransactionDetailModal> {
                 ),
                 const SizedBox(height: 14),
 
-                if (widget.item.contraparteMpId != null) ...[
-                  if (widget.item.conocidoId != null) ...[
-                    _buildDetailRow(
-                      icon: Icons.person_rounded,
-                      label: 'Contacto',
-                      valueWidget: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFD1FAE5),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          widget.item.destinatarioEmisor ?? 'Conocido',
-                          style: const TextStyle(
-                            color: Color(0xFF065F46),
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ] else ...[
-                    _buildDetailRow(
-                      icon: Icons.person_add_rounded,
-                      label: 'Contacto',
-                      valueWidget: ElevatedButton(
-                        onPressed: () => _mostrarDialogoVinculacion(context, widget.item.contraparteMpId!, notifier),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0F172A),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          shape: RoundedRectangleBorder(
+                // Mostrar el contacto asociado (si tiene uno)
+                if (widget.item.conocidoId != null) ...[
+                  Builder(
+                    builder: (context) {
+                      final conocido = notifier.findConocidoById(widget.item.conocidoId);
+                      final nombreCompleto = conocido?.nombreCompleto ?? 'Contacto';
+                      return _buildDetailRow(
+                        icon: Icons.person_rounded,
+                        label: 'Contacto',
+                        valueWidget: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD1FAE5),
                             borderRadius: BorderRadius.circular(8),
                           ),
+                          child: Text(
+                            nombreCompleto,
+                            style: const TextStyle(
+                              color: Color(0xFF065F46),
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                        child: const Text('Vincular / Crear', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ],
+                      );
+                    }
+                  ),
                   const SizedBox(height: 14),
-                ] else if (widget.item.destinatarioEmisor != null && widget.item.destinatarioEmisor!.isNotEmpty) ...[
+                ] else if (widget.item.contraparteMpId != null) ...[
+                  // Si no está vinculado pero tiene un ID de MP, mostrar botón para vincular
                   _buildDetailRow(
-                    icon: Icons.person_rounded,
-                    label: esEgreso ? 'Destinatario' : 'Emisor / Remitente',
-                    value: widget.item.destinatarioEmisor!,
+                    icon: Icons.person_add_rounded,
+                    label: 'Contacto',
+                    valueWidget: ElevatedButton(
+                      onPressed: () => _mostrarDialogoVinculacion(context, widget.item.contraparteMpId!, notifier),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0F172A),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Vincular / Crear', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    ),
                   ),
                   const SizedBox(height: 14),
                 ],
@@ -911,6 +929,32 @@ class _TransactionDetailModalState extends State<_TransactionDetailModal> {
                     });
                   },
                 ),
+                const SizedBox(height: 20),
+                DropdownButtonFormField<int?>(
+                  value: _selectedConocidoId,
+                  decoration: InputDecoration(
+                    labelText: 'Contacto (Conocido)',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.person_rounded),
+                  ),
+                  items: [
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text('Ninguno (Desconocido / Temporal)'),
+                    ),
+                    ...notifier.conocidos.map((c) {
+                      return DropdownMenuItem<int?>(
+                        value: c.id,
+                        child: Text(c.nombreCompleto),
+                      );
+                    }),
+                  ],
+                  onChanged: (val) {
+                    setState(() {
+                      _selectedConocidoId = val;
+                    });
+                  },
+                ),
                 const SizedBox(height: 30),
 
                 Row(
@@ -922,6 +966,7 @@ class _TransactionDetailModalState extends State<_TransactionDetailModal> {
                             _isEditing = false;
                             _descripcionController.text = widget.item.descripcion;
                             _selectedCategoriaId = widget.item.categoriaId;
+                            _selectedConocidoId = widget.item.conocidoId;
                           });
                         },
                         style: OutlinedButton.styleFrom(
@@ -956,6 +1001,7 @@ class _TransactionDetailModalState extends State<_TransactionDetailModal> {
                             widget.item.id,
                             nuevaDesc,
                             _selectedCategoriaId ?? widget.item.categoriaId,
+                            conocidoId: _selectedConocidoId,
                           );
 
                           setState(() {

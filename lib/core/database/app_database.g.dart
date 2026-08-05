@@ -695,17 +695,6 @@ class $TransaccionesTable extends Transacciones
       'REFERENCES categorias (id)',
     ),
   );
-  static const VerificationMeta _destinatarioEmisorMeta =
-      const VerificationMeta('destinatarioEmisor');
-  @override
-  late final GeneratedColumn<String> destinatarioEmisor =
-      GeneratedColumn<String>(
-        'destinatario_emisor',
-        aliasedName,
-        true,
-        type: DriftSqlType.string,
-        requiredDuringInsert: false,
-      );
   static const VerificationMeta _mpPaymentIdMeta = const VerificationMeta(
     'mpPaymentId',
   );
@@ -766,7 +755,6 @@ class $TransaccionesTable extends Transacciones
     fecha,
     tipo,
     categoriaId,
-    destinatarioEmisor,
     mpPaymentId,
     proveedor,
     conocidoId,
@@ -824,15 +812,6 @@ class $TransaccionesTable extends Transacciones
       );
     } else if (isInserting) {
       context.missing(_categoriaIdMeta);
-    }
-    if (data.containsKey('destinatario_emisor')) {
-      context.handle(
-        _destinatarioEmisorMeta,
-        destinatarioEmisor.isAcceptableOrUnknown(
-          data['destinatario_emisor']!,
-          _destinatarioEmisorMeta,
-        ),
-      );
     }
     if (data.containsKey('mp_payment_id')) {
       context.handle(
@@ -899,10 +878,6 @@ class $TransaccionesTable extends Transacciones
         DriftSqlType.int,
         data['${effectivePrefix}categoria_id'],
       )!,
-      destinatarioEmisor: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}destinatario_emisor'],
-      ),
       mpPaymentId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}mp_payment_id'],
@@ -938,7 +913,6 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
   final DateTime fecha;
   final TipoTransaccion tipo;
   final int categoriaId;
-  final String? destinatarioEmisor;
   final String? mpPaymentId;
   final String proveedor;
   final int? conocidoId;
@@ -950,7 +924,6 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
     required this.fecha,
     required this.tipo,
     required this.categoriaId,
-    this.destinatarioEmisor,
     this.mpPaymentId,
     required this.proveedor,
     this.conocidoId,
@@ -969,9 +942,6 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
       );
     }
     map['categoria_id'] = Variable<int>(categoriaId);
-    if (!nullToAbsent || destinatarioEmisor != null) {
-      map['destinatario_emisor'] = Variable<String>(destinatarioEmisor);
-    }
     if (!nullToAbsent || mpPaymentId != null) {
       map['mp_payment_id'] = Variable<String>(mpPaymentId);
     }
@@ -993,9 +963,6 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
       fecha: Value(fecha),
       tipo: Value(tipo),
       categoriaId: Value(categoriaId),
-      destinatarioEmisor: destinatarioEmisor == null && nullToAbsent
-          ? const Value.absent()
-          : Value(destinatarioEmisor),
       mpPaymentId: mpPaymentId == null && nullToAbsent
           ? const Value.absent()
           : Value(mpPaymentId),
@@ -1023,9 +990,6 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
         serializer.fromJson<int>(json['tipo']),
       ),
       categoriaId: serializer.fromJson<int>(json['categoriaId']),
-      destinatarioEmisor: serializer.fromJson<String?>(
-        json['destinatarioEmisor'],
-      ),
       mpPaymentId: serializer.fromJson<String?>(json['mpPaymentId']),
       proveedor: serializer.fromJson<String>(json['proveedor']),
       conocidoId: serializer.fromJson<int?>(json['conocidoId']),
@@ -1044,7 +1008,6 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
         $TransaccionesTable.$convertertipo.toJson(tipo),
       ),
       'categoriaId': serializer.toJson<int>(categoriaId),
-      'destinatarioEmisor': serializer.toJson<String?>(destinatarioEmisor),
       'mpPaymentId': serializer.toJson<String?>(mpPaymentId),
       'proveedor': serializer.toJson<String>(proveedor),
       'conocidoId': serializer.toJson<int?>(conocidoId),
@@ -1059,7 +1022,6 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
     DateTime? fecha,
     TipoTransaccion? tipo,
     int? categoriaId,
-    Value<String?> destinatarioEmisor = const Value.absent(),
     Value<String?> mpPaymentId = const Value.absent(),
     String? proveedor,
     Value<int?> conocidoId = const Value.absent(),
@@ -1071,9 +1033,6 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
     fecha: fecha ?? this.fecha,
     tipo: tipo ?? this.tipo,
     categoriaId: categoriaId ?? this.categoriaId,
-    destinatarioEmisor: destinatarioEmisor.present
-        ? destinatarioEmisor.value
-        : this.destinatarioEmisor,
     mpPaymentId: mpPaymentId.present ? mpPaymentId.value : this.mpPaymentId,
     proveedor: proveedor ?? this.proveedor,
     conocidoId: conocidoId.present ? conocidoId.value : this.conocidoId,
@@ -1093,9 +1052,6 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
       categoriaId: data.categoriaId.present
           ? data.categoriaId.value
           : this.categoriaId,
-      destinatarioEmisor: data.destinatarioEmisor.present
-          ? data.destinatarioEmisor.value
-          : this.destinatarioEmisor,
       mpPaymentId: data.mpPaymentId.present
           ? data.mpPaymentId.value
           : this.mpPaymentId,
@@ -1118,7 +1074,6 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
           ..write('fecha: $fecha, ')
           ..write('tipo: $tipo, ')
           ..write('categoriaId: $categoriaId, ')
-          ..write('destinatarioEmisor: $destinatarioEmisor, ')
           ..write('mpPaymentId: $mpPaymentId, ')
           ..write('proveedor: $proveedor, ')
           ..write('conocidoId: $conocidoId, ')
@@ -1135,7 +1090,6 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
     fecha,
     tipo,
     categoriaId,
-    destinatarioEmisor,
     mpPaymentId,
     proveedor,
     conocidoId,
@@ -1151,7 +1105,6 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
           other.fecha == this.fecha &&
           other.tipo == this.tipo &&
           other.categoriaId == this.categoriaId &&
-          other.destinatarioEmisor == this.destinatarioEmisor &&
           other.mpPaymentId == this.mpPaymentId &&
           other.proveedor == this.proveedor &&
           other.conocidoId == this.conocidoId &&
@@ -1165,7 +1118,6 @@ class TransaccionesCompanion extends UpdateCompanion<Transaccione> {
   final Value<DateTime> fecha;
   final Value<TipoTransaccion> tipo;
   final Value<int> categoriaId;
-  final Value<String?> destinatarioEmisor;
   final Value<String?> mpPaymentId;
   final Value<String> proveedor;
   final Value<int?> conocidoId;
@@ -1177,7 +1129,6 @@ class TransaccionesCompanion extends UpdateCompanion<Transaccione> {
     this.fecha = const Value.absent(),
     this.tipo = const Value.absent(),
     this.categoriaId = const Value.absent(),
-    this.destinatarioEmisor = const Value.absent(),
     this.mpPaymentId = const Value.absent(),
     this.proveedor = const Value.absent(),
     this.conocidoId = const Value.absent(),
@@ -1190,7 +1141,6 @@ class TransaccionesCompanion extends UpdateCompanion<Transaccione> {
     required DateTime fecha,
     required TipoTransaccion tipo,
     required int categoriaId,
-    this.destinatarioEmisor = const Value.absent(),
     this.mpPaymentId = const Value.absent(),
     this.proveedor = const Value.absent(),
     this.conocidoId = const Value.absent(),
@@ -1207,7 +1157,6 @@ class TransaccionesCompanion extends UpdateCompanion<Transaccione> {
     Expression<DateTime>? fecha,
     Expression<int>? tipo,
     Expression<int>? categoriaId,
-    Expression<String>? destinatarioEmisor,
     Expression<String>? mpPaymentId,
     Expression<String>? proveedor,
     Expression<int>? conocidoId,
@@ -1220,7 +1169,6 @@ class TransaccionesCompanion extends UpdateCompanion<Transaccione> {
       if (fecha != null) 'fecha': fecha,
       if (tipo != null) 'tipo': tipo,
       if (categoriaId != null) 'categoria_id': categoriaId,
-      if (destinatarioEmisor != null) 'destinatario_emisor': destinatarioEmisor,
       if (mpPaymentId != null) 'mp_payment_id': mpPaymentId,
       if (proveedor != null) 'proveedor': proveedor,
       if (conocidoId != null) 'conocido_id': conocidoId,
@@ -1235,7 +1183,6 @@ class TransaccionesCompanion extends UpdateCompanion<Transaccione> {
     Value<DateTime>? fecha,
     Value<TipoTransaccion>? tipo,
     Value<int>? categoriaId,
-    Value<String?>? destinatarioEmisor,
     Value<String?>? mpPaymentId,
     Value<String>? proveedor,
     Value<int?>? conocidoId,
@@ -1248,7 +1195,6 @@ class TransaccionesCompanion extends UpdateCompanion<Transaccione> {
       fecha: fecha ?? this.fecha,
       tipo: tipo ?? this.tipo,
       categoriaId: categoriaId ?? this.categoriaId,
-      destinatarioEmisor: destinatarioEmisor ?? this.destinatarioEmisor,
       mpPaymentId: mpPaymentId ?? this.mpPaymentId,
       proveedor: proveedor ?? this.proveedor,
       conocidoId: conocidoId ?? this.conocidoId,
@@ -1279,9 +1225,6 @@ class TransaccionesCompanion extends UpdateCompanion<Transaccione> {
     if (categoriaId.present) {
       map['categoria_id'] = Variable<int>(categoriaId.value);
     }
-    if (destinatarioEmisor.present) {
-      map['destinatario_emisor'] = Variable<String>(destinatarioEmisor.value);
-    }
     if (mpPaymentId.present) {
       map['mp_payment_id'] = Variable<String>(mpPaymentId.value);
     }
@@ -1306,7 +1249,6 @@ class TransaccionesCompanion extends UpdateCompanion<Transaccione> {
           ..write('fecha: $fecha, ')
           ..write('tipo: $tipo, ')
           ..write('categoriaId: $categoriaId, ')
-          ..write('destinatarioEmisor: $destinatarioEmisor, ')
           ..write('mpPaymentId: $mpPaymentId, ')
           ..write('proveedor: $proveedor, ')
           ..write('conocidoId: $conocidoId, ')
@@ -2906,7 +2848,6 @@ typedef $$TransaccionesTableCreateCompanionBuilder =
       required DateTime fecha,
       required TipoTransaccion tipo,
       required int categoriaId,
-      Value<String?> destinatarioEmisor,
       Value<String?> mpPaymentId,
       Value<String> proveedor,
       Value<int?> conocidoId,
@@ -2920,7 +2861,6 @@ typedef $$TransaccionesTableUpdateCompanionBuilder =
       Value<DateTime> fecha,
       Value<TipoTransaccion> tipo,
       Value<int> categoriaId,
-      Value<String?> destinatarioEmisor,
       Value<String?> mpPaymentId,
       Value<String> proveedor,
       Value<int?> conocidoId,
@@ -3022,11 +2962,6 @@ class $$TransaccionesTableFilterComposer
   get tipo => $composableBuilder(
     column: $table.tipo,
     builder: (column) => ColumnWithTypeConverterFilters(column),
-  );
-
-  ColumnFilters<String> get destinatarioEmisor => $composableBuilder(
-    column: $table.destinatarioEmisor,
-    builder: (column) => ColumnFilters(column),
   );
 
   ColumnFilters<String> get mpPaymentId => $composableBuilder(
@@ -3150,11 +3085,6 @@ class $$TransaccionesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get destinatarioEmisor => $composableBuilder(
-    column: $table.destinatarioEmisor,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get mpPaymentId => $composableBuilder(
     column: $table.mpPaymentId,
     builder: (column) => ColumnOrderings(column),
@@ -3242,11 +3172,6 @@ class $$TransaccionesTableAnnotationComposer
 
   GeneratedColumnWithTypeConverter<TipoTransaccion, int> get tipo =>
       $composableBuilder(column: $table.tipo, builder: (column) => column);
-
-  GeneratedColumn<String> get destinatarioEmisor => $composableBuilder(
-    column: $table.destinatarioEmisor,
-    builder: (column) => column,
-  );
 
   GeneratedColumn<String> get mpPaymentId => $composableBuilder(
     column: $table.mpPaymentId,
@@ -3371,7 +3296,6 @@ class $$TransaccionesTableTableManager
                 Value<DateTime> fecha = const Value.absent(),
                 Value<TipoTransaccion> tipo = const Value.absent(),
                 Value<int> categoriaId = const Value.absent(),
-                Value<String?> destinatarioEmisor = const Value.absent(),
                 Value<String?> mpPaymentId = const Value.absent(),
                 Value<String> proveedor = const Value.absent(),
                 Value<int?> conocidoId = const Value.absent(),
@@ -3383,7 +3307,6 @@ class $$TransaccionesTableTableManager
                 fecha: fecha,
                 tipo: tipo,
                 categoriaId: categoriaId,
-                destinatarioEmisor: destinatarioEmisor,
                 mpPaymentId: mpPaymentId,
                 proveedor: proveedor,
                 conocidoId: conocidoId,
@@ -3397,7 +3320,6 @@ class $$TransaccionesTableTableManager
                 required DateTime fecha,
                 required TipoTransaccion tipo,
                 required int categoriaId,
-                Value<String?> destinatarioEmisor = const Value.absent(),
                 Value<String?> mpPaymentId = const Value.absent(),
                 Value<String> proveedor = const Value.absent(),
                 Value<int?> conocidoId = const Value.absent(),
@@ -3409,7 +3331,6 @@ class $$TransaccionesTableTableManager
                 fecha: fecha,
                 tipo: tipo,
                 categoriaId: categoriaId,
-                destinatarioEmisor: destinatarioEmisor,
                 mpPaymentId: mpPaymentId,
                 proveedor: proveedor,
                 conocidoId: conocidoId,

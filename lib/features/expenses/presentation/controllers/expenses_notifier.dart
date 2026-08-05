@@ -76,6 +76,16 @@ class ExpensesNotifier extends ChangeNotifier {
     }
   }
 
+  // Buscar conocido por ID
+  Conocido? findConocidoById(int? id) {
+    if (id == null) return null;
+    try {
+      return _conocidos.firstWhere((c) => c.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
   // Sincronizar transacciones desde el servidor Render (con control de estado y mayor timeout)
   Future<void> sincronizarMercadoPago() async {
     if (_isSyncing) return; // Evitar peticiones paralelas
@@ -87,7 +97,7 @@ class ExpensesNotifier extends ChangeNotifier {
     try {
       // 1. Obtener la transacción más reciente de MP cargada localmente para filtrar la fecha de inicio
       final transaccionesMp = _transacciones
-          .where((t) => t.destinatarioEmisor != null && t.mpPaymentId != null)
+          .where((t) => t.proveedor == 'MP' && t.mpPaymentId != null)
           .toList();
       
       String? beginDate;
@@ -114,7 +124,7 @@ class ExpensesNotifier extends ChangeNotifier {
         final List<dynamic> transactionsJson = data['transactions'] ?? [];
         
         if (transactionsJson.isNotEmpty) {
-          final transaccionesNuevas = transactionsJson.map((tx) {
+          final transaccionesNuevas = transactionsJson.map<Transaccion>((tx) {
             return Transaccion(
               id: 0, // Autoincremental
               descripcion: tx['descripcion'] ?? '',
@@ -219,8 +229,13 @@ class ExpensesNotifier extends ChangeNotifier {
     await _expensesRepository.eliminarTransaccion(id);
   }
 
-  Future<void> actualizarTransaccion(int id, String descripcion, int categoriaId) async {
-    await _expensesRepository.actualizarTransaccion(id, descripcion, categoriaId);
+  Future<void> actualizarTransaccion(int id, String descripcion, int categoriaId, {int? conocidoId}) async {
+    await _expensesRepository.actualizarTransaccion(id, descripcion, categoriaId, conocidoId: conocidoId);
+  }
+
+  Future<void> asociarConocidoATransaccion(int transaccionId, int conocidoId) async {
+    await _expensesRepository.asociarConocidoATransaccion(transaccionId, conocidoId);
+    await cargarConocidos();
   }
 
   // --- MÉTODOS DE CONOCIDOS ---
@@ -245,6 +260,11 @@ class ExpensesNotifier extends ChangeNotifier {
     );
     await cargarConocidos();
     return id;
+  }
+
+  Future<void> eliminarConocido(int conocidoId) async {
+    await _expensesRepository.eliminarConocido(conocidoId);
+    await cargarConocidos();
   }
 
   Future<void> asociarTransaccionesConConocido({

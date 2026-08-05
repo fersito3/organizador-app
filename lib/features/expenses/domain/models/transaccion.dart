@@ -7,7 +7,7 @@ class Transaccion {
   final DateTime fecha;
   final TipoTransaccion tipo;
   final int categoriaId;
-  final String? destinatarioEmisor; // Emisor/Receptor de la transferencia o pago
+  final String? destinatarioEmisor; // Campo temporal de transporte
   final String? mpPaymentId; // ID de pago en Mercado Pago
   final String proveedor; // 'MP' o 'MANUAL'
   final int? conocidoId; // ID del conocido asociado (V4)

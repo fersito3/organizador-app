@@ -3,6 +3,7 @@ import '../../features/expenses/presentation/screens/expenses_screen.dart';
 import '../../features/expenses/presentation/screens/add_transaction_screen.dart';
 import '../../features/home/presentation/screens/main_menu_screen.dart';
 import '../../features/calendar/presentation/screens/calendar_screen.dart';
+import '../../features/expenses/presentation/screens/manage_conocidos_screen.dart';
 import '../../features/tasks/presentation/screens/tasks_screen.dart';
 
 class AppRoutes {
@@ -11,6 +12,7 @@ class AppRoutes {
   static const String routeAddTransaction = '/add-transaction';
   static const String routeCalendar = '/calendar';
   static const String routeTasks = '/tasks';
+  static const String routeManageConocidos = '/manage-conocidos';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -38,6 +40,11 @@ class AppRoutes {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const TasksScreen(),
+        );
+      case routeManageConocidos:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const ManageConocidosScreen(),
         );
       default:
         return MaterialPageRoute(

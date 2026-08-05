@@ -12,7 +12,6 @@ class AddTransactionUseCase {
     required DateTime fecha,
     required TipoTransaccion tipo,
     required int categoriaId,
-    String? destinatarioEmisor,
     int? conocidoId,
     String? contraparteMpId,
   }) async {
@@ -29,7 +28,6 @@ class AddTransactionUseCase {
       fecha: fecha,
       tipo: tipo,
       categoriaId: categoriaId,
-      destinatarioEmisor: destinatarioEmisor?.trim().isEmpty == true ? null : destinatarioEmisor?.trim(),
       conocidoId: conocidoId,
       contraparteMpId: contraparteMpId,
     );

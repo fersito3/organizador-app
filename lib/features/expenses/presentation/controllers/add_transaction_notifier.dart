@@ -115,21 +115,23 @@ class AddTransactionNotifier extends ChangeNotifier {
     notifyListeners();
 
     try {
-      String? finalDestinatario = destinatarioEmisor;
+      String finalDesc = descripcion.trim();
+      if (_conocidoIdSeleccionado == null && destinatarioEmisor != null && destinatarioEmisor.trim().isNotEmpty) {
+        finalDesc = '$finalDesc - ${destinatarioEmisor.trim()}';
+      }
+
       String? finalContraparteMpId;
       if (_conocidoIdSeleccionado != null) {
         final seleccionado = _conocidos.firstWhere((c) => c.id == _conocidoIdSeleccionado);
-        finalDestinatario = seleccionado.nombreCompleto;
         finalContraparteMpId = seleccionado.mpUserId;
       }
 
       await _addTransactionUseCase.execute(
-        descripcion: descripcion,
+        descripcion: finalDesc,
         monto: monto,
         fecha: _fechaSeleccionada,
         tipo: _tipoSeleccionado,
         categoriaId: _categoriaIdSeleccionada!,
-        destinatarioEmisor: finalDestinatario,
         conocidoId: _conocidoIdSeleccionado,
         contraparteMpId: finalContraparteMpId,
       );

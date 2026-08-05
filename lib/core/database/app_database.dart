@@ -25,7 +25,6 @@ class Transacciones extends Table {
   DateTimeColumn get fecha => dateTime()();
   IntColumn get tipo => intEnum<TipoTransaccion>()(); // Egreso o Ingreso
   IntColumn get categoriaId => integer().references(Categorias, #id)();
-  TextColumn get destinatarioEmisor => text().nullable()(); // Persona o entidad asociada a la transacción
   
   // Campos específicos para la integración con Mercado Pago
   TextColumn get mpPaymentId => text().nullable()(); // ID único del pago en Mercado Pago (evita duplicados)
@@ -78,7 +77,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 4; // Incrementamos a la versión 4 para agregar Conocidos
+  int get schemaVersion => 5; // Incrementamos a la versión 5 para Conocidos avanzados
 
   @override
   MigrationStrategy get migration {
@@ -87,14 +86,16 @@ class AppDatabase extends _$AppDatabase {
         await m.createAll();
       },
       onUpgrade: (Migrator m, int from, int to) async {
-        if (from < 3) {
-          await m.addColumn(transacciones, transacciones.destinatarioEmisor);
-        }
         if (from < 4) {
           // Crear la nueva tabla de Conocidos y añadir campos a Transacciones
           await m.createTable(conocidos);
           await m.addColumn(transacciones, transacciones.conocidoId);
           await m.addColumn(transacciones, transacciones.contraparteMpId);
+        }
+        if (from < 5) {
+          // Como eliminamos destinatarioEmisor, recreamos la tabla limpia
+          await m.deleteTable('transacciones');
+          await m.createTable(transacciones);
         }
       },
       beforeOpen: (details) async {
