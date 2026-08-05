@@ -26,6 +26,13 @@ class ExpensesNotifier extends ChangeNotifier {
   bool _isLoading = true;
   bool get isLoading => _isLoading;
 
+  // Estados de Sincronización
+  bool _isSyncing = false;
+  bool get isSyncing => _isSyncing;
+
+  String? _syncErrorMessage;
+  String? get syncErrorMessage => _syncErrorMessage;
+
   // Estados de Filtro
   TipoTransaccion? _filtroTipo;
   TipoTransaccion? get filtroTipo => _filtroTipo;
@@ -63,12 +70,18 @@ class ExpensesNotifier extends ChangeNotifier {
     }
   }
 
-  // Sincronizar transacciones en segundo plano desde el servidor Render
+  // Sincronizar transacciones desde el servidor Render (con control de estado y mayor timeout)
   Future<void> sincronizarMercadoPago() async {
+    if (_isSyncing) return; // Evitar peticiones paralelas
+    
+    _isSyncing = true;
+    _syncErrorMessage = null;
+    notifyListeners();
+
     try {
       // 1. Obtener la transacción más reciente de MP cargada localmente para filtrar la fecha de inicio
       final transaccionesMp = _transacciones
-          .where((t) => t.destinatarioEmisor != null && t.mpPaymentId != null) // Simplificado o filtrado por MP
+          .where((t) => t.destinatarioEmisor != null && t.mpPaymentId != null)
           .toList();
       
       String? beginDate;
@@ -85,10 +98,10 @@ class ExpensesNotifier extends ChangeNotifier {
         url = url.replace(queryParameters: {'begin_date': beginDate});
       }
 
-      debugPrint('Iniciando sincronización automática con Mercado Pago. URL: $url');
+      debugPrint('Iniciando sincronización con Mercado Pago. URL: $url');
 
-      // 3. Realizar la petición HTTP con timeout de 15 segundos
-      final response = await http.get(url).timeout(const Duration(seconds: 15));
+      // 3. Realizar la petición HTTP con timeout de 60 segundos (permite despertar a Render si está suspendido)
+      final response = await http.get(url).timeout(const Duration(seconds: 60));
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -115,11 +128,17 @@ class ExpensesNotifier extends ChangeNotifier {
         } else {
           debugPrint('Sincronización al día. No hay nuevas transacciones.');
         }
+        _syncErrorMessage = null;
       } else {
+        _syncErrorMessage = 'Fallo de servidor (HTTP ${response.statusCode})';
         debugPrint('Fallo al sincronizar con Mercado Pago: HTTP ${response.statusCode}');
       }
     } catch (e) {
+      _syncErrorMessage = 'No se pudo conectar al servidor';
       debugPrint('Error de red al sincronizar con Mercado Pago: $e');
+    } finally {
+      _isSyncing = false;
+      notifyListeners();
     }
   }
 

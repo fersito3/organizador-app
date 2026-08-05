@@ -50,6 +50,46 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          Consumer<ExpensesNotifier>(
+            builder: (context, notifier, child) {
+              if (notifier.isSyncing) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ),
+                );
+              }
+              return IconButton(
+                icon: const Icon(Icons.sync_rounded, color: Color(0xFF0F172A)),
+                tooltip: 'Sincronizar Mercado Pago',
+                onPressed: () async {
+                  await notifier.sincronizarMercadoPago();
+                  if (context.mounted) {
+                    final err = notifier.syncErrorMessage;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(err != null
+                            ? 'Error al sincronizar: $err'
+                            : 'Sincronización de Mercado Pago completada con éxito.'),
+                        backgroundColor: err != null ? Colors.red : Colors.green,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                },
+              );
+            },
+          ),
+        ],
       ),
       body: Consumer<ExpensesNotifier>(
         builder: (context, notifier, child) {
@@ -57,6 +97,10 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
             children: [
               // 1. FILTER SUMMARY CARD (DASHBOARD CARD FOR FILTERED VALUE)
               _buildFilteredSummaryCard(notifier),
+
+              // Status banner for background synchronization
+              if (notifier.isSyncing || notifier.syncErrorMessage != null)
+                _buildSyncStatusBanner(notifier),
 
               // 2. SEARCH BAR & CHIPS SECTION
               _buildSearchAndFilters(notifier),
@@ -648,6 +692,45 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
             ),
           ),
       ],
+    );
+  }
+
+  // Banner informativo del estado de la sincronización de Mercado Pago
+  Widget _buildSyncStatusBanner(ExpensesNotifier notifier) {
+    final isError = notifier.syncErrorMessage != null;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+      decoration: BoxDecoration(
+        color: isError ? const Color(0xFFFEE2E2) : const Color(0xFFEFF6FF), // Rojo suave o Azul suave
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isError ? const Color(0xFFFCA5A5) : const Color(0xFFBFDBFE),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isError ? Icons.error_outline_rounded : Icons.info_outline_rounded,
+            size: 16,
+            color: isError ? const Color(0xFFB91C1C) : const Color(0xFF1D4ED8),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              isError
+                  ? 'Error al conectar con Render: ${notifier.syncErrorMessage}. Vuelve a intentar.'
+                  : 'Despertando servidor en Render y sincronizando... (puede tardar hasta 1 minuto por arranque en frío)',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: isError ? const Color(0xFF991B1B) : const Color(0xFF1E40AF),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
