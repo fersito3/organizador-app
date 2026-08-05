@@ -491,9 +491,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                                   const SizedBox(width: 4),
                                   Expanded(
                                     child: Text(
-                                      esEgreso
-                                          ? 'Para: ${item.destinatarioEmisor}'
-                                          : 'De: ${item.destinatarioEmisor}',
+                                      item.destinatarioEmisor!,
                                       style: const TextStyle(
                                         fontSize: 11,
                                         color: Color(0xFF475569),

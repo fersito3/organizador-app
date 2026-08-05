@@ -173,10 +173,15 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
           // Fallback a la descripción de la compra o genérico si no se encuentra
           destinatarioEmisor = recipientName || payment.description || 'Destinatario MP';
         }
+        
+        let descripcion = payment.description || (tipo === 'egreso' ? 'Gasto Mercado Pago' : 'Ingreso Mercado Pago');
+        if (descripcion.toLowerCase().trim() === 'varios') {
+          descripcion = 'Transferencia';
+        }
 
         return {
           mpPaymentId: payment.id.toString(),
-          descripcion: payment.description || (tipo === 'egreso' ? 'Gasto Mercado Pago' : 'Ingreso Mercado Pago'),
+          descripcion: descripcion,
           monto: parseFloat(payment.transaction_amount),
           fecha: payment.date_approved || payment.date_created,
           tipo: tipo, // 'ingreso' o 'egreso'
