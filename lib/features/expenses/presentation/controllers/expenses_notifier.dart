@@ -164,7 +164,11 @@ class ExpensesNotifier extends ChangeNotifier {
         final query = _filtroBusqueda.toLowerCase();
         final coincideDesc = t.descripcion.toLowerCase().contains(query);
         final coincideEntidad = t.destinatarioEmisor?.toLowerCase().contains(query) ?? false;
-        return coincideDesc || coincideEntidad;
+        
+        final cat = findCategoriaById(t.categoriaId);
+        final coincideCat = cat?.nombre.toLowerCase().contains(query) ?? false;
+        
+        return coincideDesc || coincideEntidad || coincideCat;
       }
       return true;
     }).toList();
@@ -208,6 +212,10 @@ class ExpensesNotifier extends ChangeNotifier {
 
   Future<void> eliminarTransaccion(int id) async {
     await _expensesRepository.eliminarTransaccion(id);
+  }
+
+  Future<void> actualizarTransaccion(int id, String descripcion, int categoriaId) async {
+    await _expensesRepository.actualizarTransaccion(id, descripcion, categoriaId);
   }
 
   @override

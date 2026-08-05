@@ -88,20 +88,27 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> inicializarCategoriasBase() async {
-  final categoriasExistentes = await select(categorias).get();
-  
-  if (categoriasExistentes.isEmpty) {
-    await batch((batch) {
-      batch.insertAll(categorias, [
-        CategoriasCompanion.insert(nombre: 'Comida', colorHex: 'FF9800', tipo: TipoTransaccion.egreso),
-        CategoriasCompanion.insert(nombre: 'Facultad', colorHex: '2196F3', tipo: TipoTransaccion.egreso),
-        CategoriasCompanion.insert(nombre: 'Transporte', colorHex: '4CAF50', tipo: TipoTransaccion.egreso),
-        CategoriasCompanion.insert(nombre: 'Varios', colorHex: '9C27B0', tipo: TipoTransaccion.egreso),
-        CategoriasCompanion.insert(nombre: 'Ingreso/Sueldo', colorHex: '009688', tipo: TipoTransaccion.ingreso),
-      ]);
-    });
+    final categoriasExistentes = await select(categorias).get();
+    
+    Future<void> insertarSiNoExiste(String nombre, String colorHex, TipoTransaccion tipo) async {
+      final match = categoriasExistentes.where((c) => c.nombre.toLowerCase() == nombre.toLowerCase());
+      if (match.isEmpty) {
+        await into(categorias).insert(CategoriasCompanion.insert(
+          nombre: nombre,
+          colorHex: colorHex,
+          tipo: tipo,
+        ));
+      }
+    }
+
+    await insertarSiNoExiste('Comida', 'FF9800', TipoTransaccion.egreso);
+    await insertarSiNoExiste('Facultad', '2196F3', TipoTransaccion.egreso);
+    await insertarSiNoExiste('Transporte', '4CAF50', TipoTransaccion.egreso);
+    await insertarSiNoExiste('Varios', '9C27B0', TipoTransaccion.egreso);
+    await insertarSiNoExiste('Ingreso/Sueldo', '009688', TipoTransaccion.ingreso);
+    await insertarSiNoExiste('Amigos', 'E91E63', TipoTransaccion.egreso); // Rosa/Amigos
+    await insertarSiNoExiste('Farmacia', '00BCD4', TipoTransaccion.egreso); // Cyan/Farmacia
   }
-}
 }
 
 LazyDatabase _openConnection() {

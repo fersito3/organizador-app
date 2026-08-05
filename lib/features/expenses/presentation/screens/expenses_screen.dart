@@ -391,19 +391,50 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
                     children: [
-                      // Leading color circle and arrow icon
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: Color(colorValue).withOpacity(0.15),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          esEgreso ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                          color: Color(colorValue),
-                          size: 20,
-                        ),
+                      // Circular profile picture or fallback arrow icon
+                      Builder(
+                        builder: (context) {
+                          final tieneEntidad = item.destinatarioEmisor != null && item.destinatarioEmisor!.isNotEmpty;
+                          if (tieneEntidad) {
+                            final initialsUrl = 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(item.destinatarioEmisor!)}&background=0F172A&color=ffffff&bold=true&size=128';
+                            return ClipRRect(
+                              borderRadius: BorderRadius.circular(22),
+                              child: Image.network(
+                                initialsUrl,
+                                width: 44,
+                                height: 44,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: Color(colorValue).withOpacity(0.15),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      esEgreso ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+                                      color: Color(colorValue),
+                                      size: 20,
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          }
+                          return Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: Color(colorValue).withOpacity(0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              esEgreso ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+                              color: Color(colorValue),
+                              size: 20,
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(width: 14),
                       // Core details (Description, category, sender/receiver)
@@ -499,71 +530,175 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     );
   }
 
-  // Display detail Modal Bottom Sheet
   void _showTransactionDetails(
     BuildContext context,
     Transaccion item,
     CategoriaDomain? categoria,
   ) {
-    final esEgreso = item.tipo == TipoTransaccion.egreso;
-
-    // Parse category color
-    int colorValue = 0xFF9E9E9E; // Default grey
-    if (categoria != null) {
-      try {
-        colorValue = int.parse('FF${categoria.colorHex}', radix: 16);
-      } catch (_) {}
-    }
-
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true, 
       backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(28),
-              topRight: Radius.circular(28),
+        return _TransactionDetailModal(
+          item: item,
+          initialCategoria: categoria,
+        );
+      },
+    );
+  }
+
+  // Banner informativo del estado de la sincronización de Mercado Pago
+  Widget _buildSyncStatusBanner(ExpensesNotifier notifier) {
+    final isError = notifier.syncErrorMessage != null;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+      decoration: BoxDecoration(
+        color: isError ? const Color(0xFFFEE2E2) : const Color(0xFFEFF6FF), // Rojo suave o Azul suave
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isError ? const Color(0xFFFCA5A5) : const Color(0xFFBFDBFE),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isError ? Icons.error_outline_rounded : Icons.info_outline_rounded,
+            size: 16,
+            color: isError ? const Color(0xFFB91C1C) : const Color(0xFF1D4ED8),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              isError
+                  ? 'Error al conectar con Render: ${notifier.syncErrorMessage}. Vuelve a intentar.'
+                  : 'Despertando servidor en Render y sincronizando... (puede tardar hasta 1 minuto por arranque en frío)',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: isError ? const Color(0xFF991B1B) : const Color(0xFF1E40AF),
+              ),
             ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top Indicator line
-                Center(
-                  child: Container(
-                    width: 48,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(10),
+        ],
+      ),
+    );
+  }
+}
+
+class _TransactionDetailModal extends StatefulWidget {
+  final Transaccion item;
+  final CategoriaDomain? initialCategoria;
+
+  const _TransactionDetailModal({
+    Key? key,
+    required this.item,
+    this.initialCategoria,
+  }) : super(key: key);
+
+  @override
+  State<_TransactionDetailModal> createState() => _TransactionDetailModalState();
+}
+
+class _TransactionDetailModalState extends State<_TransactionDetailModal> {
+  bool _isEditing = false;
+  late TextEditingController _descripcionController;
+  int? _selectedCategoriaId;
+
+  @override
+  void initState() {
+    super.initState();
+    _descripcionController = TextEditingController(text: widget.item.descripcion);
+    _selectedCategoriaId = widget.item.categoriaId;
+  }
+
+  @override
+  void dispose() {
+    _descripcionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final notifier = Provider.of<ExpensesNotifier>(context);
+    final esEgreso = widget.item.tipo == TipoTransaccion.egreso;
+    
+    final categoria = notifier.categorias.firstWhere(
+      (c) => c.id == _selectedCategoriaId,
+      orElse: () => widget.initialCategoria ?? CategoriaDomain(id: 0, nombre: 'Varios', colorHex: '9E9E9E', tipo: widget.item.tipo),
+    );
+
+    int colorValue = 0xFF9E9E9E;
+    try {
+      colorValue = int.parse('FF${categoria.colorHex}', radix: 16);
+    } catch (_) {}
+
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(28),
+          topRight: Radius.circular(28),
+        ),
+      ),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _isEditing ? 'Editar Transacción' : 'Detalle de Transacción',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF64748B),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-
-                // Modal Title
-                const Text(
-                  'Detalle de Transacción',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF64748B),
+                  IconButton(
+                    icon: Icon(
+                      _isEditing ? Icons.visibility_rounded : Icons.edit_rounded,
+                      color: const Color(0xFF0F172A),
+                    ),
+                    tooltip: _isEditing ? 'Ver detalle' : 'Editar transacción',
+                    onPressed: () {
+                      setState(() {
+                        _isEditing = !_isEditing;
+                      });
+                    },
                   ),
-                ),
-                const SizedBox(height: 16),
+                ],
+              ),
+              const SizedBox(height: 16),
 
-                // Amount and Title
+              if (!_isEditing) ...[
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
                       child: Text(
-                        item.descripcion,
+                        widget.item.descripcion,
                         style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -572,7 +707,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       ),
                     ),
                     Text(
-                      '${esEgreso ? '-' : '+'}\$${item.monto.toStringAsFixed(2)}',
+                      '${esEgreso ? '-' : '+'}\$${widget.item.monto.toStringAsFixed(2)}',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -585,7 +720,6 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 const Divider(height: 1, color: Color(0xFFE2E8F0)),
                 const SizedBox(height: 20),
 
-                // Info Rows
                 _buildDetailRow(
                   icon: Icons.category_rounded,
                   label: 'Categoría',
@@ -596,7 +730,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      categoria?.nombre ?? 'Sin Categoría',
+                      categoria.nombre,
                       style: TextStyle(
                         color: Color(colorValue),
                         fontSize: 12,
@@ -610,7 +744,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 _buildDetailRow(
                   icon: Icons.calendar_today_rounded,
                   label: 'Fecha',
-                  value: item.fecha.toString().split(' ')[0],
+                  value: widget.item.fecha.toString().split(' ')[0],
                 ),
                 const SizedBox(height: 14),
 
@@ -621,24 +755,23 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 ),
                 const SizedBox(height: 14),
 
-                if (item.destinatarioEmisor != null && item.destinatarioEmisor!.isNotEmpty) ...[
+                if (widget.item.destinatarioEmisor != null && widget.item.destinatarioEmisor!.isNotEmpty) ...[
                   _buildDetailRow(
                     icon: Icons.person_rounded,
                     label: esEgreso ? 'Destinatario' : 'Emisor / Remitente',
-                    value: item.destinatarioEmisor!,
+                    value: widget.item.destinatarioEmisor!,
                   ),
                   const SizedBox(height: 14),
                 ],
 
-                 _buildDetailRow(
+                _buildDetailRow(
                   icon: Icons.source_rounded,
                   label: 'Origen / Canal',
-                  value: item.proveedor == 'MP' ? 'Mercado Pago' : 'Manual',
+                  value: widget.item.proveedor == 'MP' ? 'Mercado Pago' : 'Manual',
                 ),
 
                 const SizedBox(height: 24),
-                
-                // Actions (Delete & Close)
+
                 Row(
                   children: [
                     Expanded(
@@ -664,10 +797,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
                           if (confirmar == true) {
                             if (context.mounted) {
-                              final notifier = Provider.of<ExpensesNotifier>(context, listen: false);
-                              await notifier.eliminarTransaccion(item.id);
+                              await notifier.eliminarTransaccion(widget.item.id);
                               if (!context.mounted) return;
-                              Navigator.pop(context); // Cerrar bottom sheet
+                              Navigator.pop(context);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text('Transacción eliminada con éxito.'),
@@ -708,15 +840,124 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     ),
                   ],
                 ),
+              ] else ...[
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _descripcionController,
+                  decoration: InputDecoration(
+                    labelText: 'Descripción / Título',
+                    hintText: 'Ej. Compra en Coto',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.description_rounded),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                DropdownButtonFormField<int>(
+                  value: _selectedCategoriaId,
+                  decoration: InputDecoration(
+                    labelText: 'Categoría',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.category_rounded),
+                  ),
+                  items: notifier.categorias
+                      .where((c) => c.tipo == widget.item.tipo)
+                      .map((cat) {
+                    return DropdownMenuItem<int>(
+                      value: cat.id,
+                      child: Text(cat.nombre),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    setState(() {
+                      _selectedCategoriaId = val;
+                    });
+                  },
+                ),
+                const SizedBox(height: 30),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          setState(() {
+                            _isEditing = false;
+                            _descripcionController.text = widget.item.descripcion;
+                            _selectedCategoriaId = widget.item.categoriaId;
+                          });
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: const BorderSide(color: Color(0xFF64748B)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancelar',
+                          style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          final nuevaDesc = _descripcionController.text.trim();
+                          if (nuevaDesc.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('La descripción no puede estar vacía.'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                            return;
+                          }
+                          
+                          await notifier.actualizarTransaccion(
+                            widget.item.id,
+                            nuevaDesc,
+                            _selectedCategoriaId ?? widget.item.categoriaId,
+                          );
+
+                          setState(() {
+                            _isEditing = false;
+                          });
+
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Cambios guardados con éxito.'),
+                                backgroundColor: Colors.green,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0F172A),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: const Text(
+                          'Guardar',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
-            ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  // Helper row builder for details
   Widget _buildDetailRow({
     required IconData icon,
     required String label,
@@ -744,45 +985,6 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
             ),
           ),
       ],
-    );
-  }
-
-  // Banner informativo del estado de la sincronización de Mercado Pago
-  Widget _buildSyncStatusBanner(ExpensesNotifier notifier) {
-    final isError = notifier.syncErrorMessage != null;
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-      decoration: BoxDecoration(
-        color: isError ? const Color(0xFFFEE2E2) : const Color(0xFFEFF6FF), // Rojo suave o Azul suave
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isError ? const Color(0xFFFCA5A5) : const Color(0xFFBFDBFE),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            isError ? Icons.error_outline_rounded : Icons.info_outline_rounded,
-            size: 16,
-            color: isError ? const Color(0xFFB91C1C) : const Color(0xFF1D4ED8),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              isError
-                  ? 'Error al conectar con Render: ${notifier.syncErrorMessage}. Vuelve a intentar.'
-                  : 'Despertando servidor en Render y sincronizando... (puede tardar hasta 1 minuto por arranque en frío)',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: isError ? const Color(0xFF991B1B) : const Color(0xFF1E40AF),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

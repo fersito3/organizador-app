@@ -87,6 +87,8 @@ class ExpensesRepository implements IExpensesRepository {
     final idTransporte = findCategoryIdByName('Transporte');
     final idVarios = findCategoryIdByName('Varios');
     final idIngreso = findCategoryIdByName('Ingreso/Sueldo');
+    final idAmigos = findCategoryIdByName('Amigos');
+    final idFarmacia = findCategoryIdByName('Farmacia');
 
     // 2. Guardar transacciones
     for (final item in transaccionesList) {
@@ -136,6 +138,22 @@ class ExpensesRepository implements IExpensesRepository {
             desc.contains('peaje') ||
             desc.contains('estacionamiento')) {
           catId = idTransporte ?? catId;
+        } else if (desc.contains('amigo') ||
+            desc.contains('juntada') ||
+            desc.contains('salida') ||
+            desc.contains('junta') ||
+            desc.contains('regalo') ||
+            desc.contains('asado')) {
+          catId = idAmigos ?? catId;
+        } else if (desc.contains('farmacia') ||
+            desc.contains('remedio') ||
+            desc.contains('medicamento') ||
+            desc.contains('pastilla') ||
+            desc.contains('drogeria') ||
+            desc.contains('ibuprofeno') ||
+            desc.contains('doctor') ||
+            desc.contains('consultorio')) {
+          catId = idFarmacia ?? catId;
         }
       }
 
@@ -171,5 +189,14 @@ class ExpensesRepository implements IExpensesRepository {
   @override
   Future<void> eliminarTransaccion(int id) async {
     await (db.delete(db.transacciones)..where((t) => t.id.equals(id))).go();
+  }
+
+  @override
+  Future<void> actualizarTransaccion(int id, String descripcion, int categoriaId) async {
+    await (db.update(db.transacciones)..where((t) => t.id.equals(id)))
+      .write(TransaccionesCompanion(
+        descripcion: Value(descripcion),
+        categoriaId: Value(categoriaId),
+      ));
   }
 }

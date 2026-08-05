@@ -56,6 +56,9 @@ class MockExpensesRepository implements IExpensesRepository {
 
   @override
   Future<void> eliminarTransaccion(int id) async {}
+
+  @override
+  Future<void> actualizarTransaccion(int id, String descripcion, int categoriaId) async {}
 }
 
 void main() {

@@ -66,15 +66,19 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
   try {
     const { begin_date, limit = 50 } = req.query;
     
-    // Si no se envía fecha de inicio, por defecto buscamos los últimos 30 días
-    let dateFilter = begin_date;
-    if (!dateFilter) {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      dateFilter = thirtyDaysAgo.toISOString();
+    // Fecha límite de corte: 4 de agosto de 2026 a las 23:35 hs (UTC-3) -> 2026-08-05T02:35:00.000Z
+    const CUTOFF_DATE = new Date('2026-08-05T02:35:00.000Z');
+    
+    let requestedDate = begin_date ? new Date(begin_date) : null;
+    
+    // Si no se pide fecha o la fecha pedida es anterior al corte, forzamos el límite
+    if (!requestedDate || requestedDate < CUTOFF_DATE) {
+      requestedDate = CUTOFF_DATE;
     }
+    
+    const dateString = requestedDate.toISOString();
 
-    console.log(`Buscando transacciones en Mercado Pago desde: ${dateFilter} (Límite: ${limit})`);
+    console.log(`Buscando transacciones en Mercado Pago desde: ${dateString} (Límite: ${limit})`);
 
     // Hacemos dos peticiones en paralelo para traer tanto ingresos (donde somos recolectores) como egresos (donde somos pagadores)
     const [ingresosResponse, egresosResponse] = await Promise.all([
@@ -83,7 +87,7 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
           Authorization: `Bearer ${MP_ACCESS_TOKEN}`
         },
         params: {
-          begin_date: dateFilter,
+          begin_date: dateString,
           sort: 'date_created',
           criteria: 'desc',
           limit: limit
@@ -98,7 +102,7 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
         },
         params: {
           'payer.id': ownerId,
-          begin_date: dateFilter,
+          begin_date: dateString,
           sort: 'date_created',
           criteria: 'desc',
           limit: limit

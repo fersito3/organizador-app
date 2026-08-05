@@ -15,4 +15,5 @@ abstract class IExpensesRepository {
   });
   Future<void> guardarTransaccionesSincronizadas(List<Transaccion> transacciones);
   Future<void> eliminarTransaccion(int id);
+  Future<void> actualizarTransaccion(int id, String descripcion, int categoriaId);
 }
