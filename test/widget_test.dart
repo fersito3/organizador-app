@@ -70,7 +70,7 @@ class MockExpensesRepository implements IExpensesRepository {
   Future<List<Conocido>> obtenerConocidos() async => [];
 
   @override
-  Future<int> guardarConocido({required String nombre, required String apellido, String? mpUserId}) async => 1;
+  Future<int> guardarConocido({int? id, required String nombre, required String apellido, String? mpUserId}) async => 1;
 
   @override
   Future<void> eliminarConocido(int conocidoId) async {}

@@ -131,31 +131,46 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
     const mappedTransactions = results
       .filter(payment => payment.status === 'approved')
       .map(payment => {
-        // Determinamos si es un ingreso o egreso de forma ultra robusta
-        const isCollectorMe = ownerId && payment.collector_id && String(payment.collector_id) === String(ownerId);
-        const isPayerMe = ownerId && payment.payer && payment.payer.id && String(payment.payer.id) === String(ownerId);
+        // Extraemos los IDs reales de Mercado Pago
+        // 1. Payer ID (en las búsquedas de MP es payment.payer_id o payment.payer.id)
+        const payerId = payment.payer_id || (payment.payer ? payment.payer.id : null);
         
-        let tipo = 'egreso'; // Por defecto
-        if (isCollectorMe && !isPayerMe) {
-          tipo = 'ingreso';
-        } else if (isPayerMe && !isCollectorMe) {
+        // 2. Collector ID (en las búsquedas de MP es payment.collector.id o payment.collector_id)
+        const collectorId = payment.collector ? payment.collector.id : payment.collector_id;
+
+        const myIdStr = ownerId ? String(ownerId) : '446191311';
+        const payerIdStr = payerId ? String(payerId) : null;
+        const collectorIdStr = collectorId ? String(collectorId) : null;
+
+        // Determinamos el tipo (ingreso o egreso) y el ID de la contraparte
+        let tipo = 'egreso';
+        let contraparteMpId = null;
+
+        if (payerIdStr === myIdStr) {
+          // Tu cuenta pagó -> Es un EGRESO -> La contraparte es el colector (quien recibió la plata)
           tipo = 'egreso';
+          contraparteMpId = (collectorIdStr && collectorIdStr !== myIdStr) ? collectorIdStr : null;
+        } else if (collectorIdStr === myIdStr) {
+          // Tu cuenta recibió -> Es un INGRESO -> La contraparte es el pagador (quien te envió la plata)
+          tipo = 'ingreso';
+          contraparteMpId = (payerIdStr && payerIdStr !== myIdStr) ? payerIdStr : null;
         } else {
-          tipo = isCollectorMe ? 'ingreso' : 'egreso';
+          // Fallback
+          tipo = 'egreso';
+          if (collectorIdStr && collectorIdStr !== myIdStr) {
+            contraparteMpId = collectorIdStr;
+          } else if (payerIdStr && payerIdStr !== myIdStr) {
+            contraparteMpId = payerIdStr;
+          }
         }
 
-        // Determinamos la persona o entidad involucrada (destinatario o emisor)
+        // Determinamos el nombre de destinatario / emisor para visualización
         let destinatarioEmisor = 'Mercado Pago';
-        
-        let contraparteMpId = null;
         if (tipo === 'ingreso') {
-          // Si es un ingreso, nos pagó/transfirió otra persona (payer)
           const p = payment.payer || {};
           const fullName = `${p.first_name || ''} ${p.last_name || ''}`.trim();
           destinatarioEmisor = fullName || p.email || 'Remitente MP';
-          contraparteMpId = p.id ? p.id.toString() : null;
         } else {
-          // Si es un egreso, buscamos el nombre del destinatario/receptor
           const poi = payment.point_of_interaction || {};
           const td = poi.transaction_data || {};
           const bt = td.bank_transfer || {};
@@ -171,10 +186,7 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
           if (!recipientName && counterpart.name) {
             recipientName = counterpart.name;
           }
-          
-          // Fallback a la descripción de la compra o genérico si no se encuentra
           destinatarioEmisor = recipientName || payment.description || 'Destinatario MP';
-          contraparteMpId = payment.collector_id ? payment.collector_id.toString() : null;
         }
         
         let descripcion = payment.description || (tipo === 'egreso' ? 'Gasto Mercado Pago' : 'Ingreso Mercado Pago');

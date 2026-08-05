@@ -22,7 +22,7 @@ abstract class IExpensesRepository {
   
   // Métodos para Conocidos
   Future<List<Conocido>> obtenerConocidos();
-  Future<int> guardarConocido({required String nombre, required String apellido, String? mpUserId});
+  Future<int> guardarConocido({int? id, required String nombre, required String apellido, String? mpUserId});
   Future<void> eliminarConocido(int conocidoId);
   Future<void> asociarTransaccionesConConocido({required String mpUserId, required int conocidoId, required String nombreCompleto});
 }

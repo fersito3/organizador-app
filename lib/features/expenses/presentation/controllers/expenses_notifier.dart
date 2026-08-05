@@ -95,34 +95,34 @@ class ExpensesNotifier extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. Obtener la transacción más reciente de MP cargada localmente para filtrar la fecha de inicio
-      final transaccionesMp = _transacciones
-          .where((t) => t.proveedor == 'MP' && t.mpPaymentId != null)
-          .toList();
+      // 1. Configurar la fecha de inicio para traer los últimos 2 días, con piso en la fecha de creación (5/8/2026)
+      final DateTime cutoffDate = DateTime.parse('2026-08-05T02:35:00Z');
+      final DateTime dosDiasAtras = DateTime.now().subtract(const Duration(days: 2));
+      final DateTime fechaInicio = dosDiasAtras.isBefore(cutoffDate) ? cutoffDate : dosDiasAtras;
       
-      String? beginDate;
-      if (transaccionesMp.isNotEmpty) {
-        final masReciente = transaccionesMp
-            .map((t) => t.fecha)
-            .reduce((a, b) => a.isAfter(b) ? a : b);
-        beginDate = masReciente.toUtc().toIso8601String();
-      }
+      final String beginDate = fechaInicio.toUtc().toIso8601String();
 
       // 2. Configurar la URL
       var url = Uri.parse('$backendUrl/api/mercadopago/transactions');
-      if (beginDate != null) {
-        url = url.replace(queryParameters: {'begin_date': beginDate});
-      }
+      url = url.replace(queryParameters: {'begin_date': beginDate});
 
-      debugPrint('Iniciando sincronización con Mercado Pago. URL: $url');
+      debugPrint('🚩 [FLAG 1: INICIO SYNC] URL: $url | fechaInicio: $beginDate');
 
       // 3. Realizar la petición HTTP con timeout de 60 segundos (permite despertar a Render si está suspendido)
       final response = await http.get(url).timeout(const Duration(seconds: 60));
       
+      debugPrint('🚩 [FLAG 2: RESPUESTA HTTP] Status code: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final List<dynamic> transactionsJson = data['transactions'] ?? [];
         
+        debugPrint('🚩 [FLAG 3: PAYLOAD RECIBIDO] Total de transacciones recibidas del servidor: ${transactionsJson.length}');
+        for (var i = 0; i < transactionsJson.length && i < 5; i++) {
+          final rawTx = transactionsJson[i];
+          debugPrint('   -> Item $i: paymentId=${rawTx['mpPaymentId']}, desc=${rawTx['descripcion']}, contraparteMpId=${rawTx['contraparteMpId']}');
+        }
+
         if (transactionsJson.isNotEmpty) {
           final transaccionesNuevas = transactionsJson.map<Transaccion>((tx) {
             return Transaccion(
@@ -141,18 +141,18 @@ class ExpensesNotifier extends ChangeNotifier {
 
           // 4. Guardar en SQLite (la UI se actualizará automáticamente por el Stream)
           await _expensesRepository.guardarTransaccionesSincronizadas(transaccionesNuevas);
-          debugPrint('Sincronizados ${transaccionesNuevas.length} nuevos pagos de Mercado Pago.');
+          debugPrint('🚩 [FLAG 4: FIN GUARDADO BBDD] Procesadas ${transaccionesNuevas.length} transacciones.');
         } else {
-          debugPrint('Sincronización al día. No hay nuevas transacciones.');
+          debugPrint('🚩 [FLAG 4: FIN GUARDADO BBDD] Sincronización al día. 0 nuevas transacciones.');
         }
         _syncErrorMessage = null;
       } else {
         _syncErrorMessage = 'Fallo de servidor (HTTP ${response.statusCode})';
-        debugPrint('Fallo al sincronizar con Mercado Pago: HTTP ${response.statusCode}');
+        debugPrint('❌ [ERROR SYNC] Fallo al sincronizar con Mercado Pago: HTTP ${response.statusCode}');
       }
     } catch (e) {
       _syncErrorMessage = 'No se pudo conectar al servidor';
-      debugPrint('Error de red al sincronizar con Mercado Pago: $e');
+      debugPrint('❌ [ERROR RED] Error al sincronizar con Mercado Pago: $e');
     } finally {
       _isSyncing = false;
       notifyListeners();
@@ -250,17 +250,19 @@ class ExpensesNotifier extends ChangeNotifier {
   }
 
   Future<int> guardarConocido({
+    int? id,
     required String nombre,
     required String apellido,
     String? mpUserId,
   }) async {
-    final id = await _expensesRepository.guardarConocido(
+    final resId = await _expensesRepository.guardarConocido(
+      id: id,
       nombre: nombre,
       apellido: apellido,
       mpUserId: mpUserId,
     );
     await cargarConocidos();
-    return id;
+    return resId;
   }
 
   Future<void> eliminarConocido(int conocidoId) async {

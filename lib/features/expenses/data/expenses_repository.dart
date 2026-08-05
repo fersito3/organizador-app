@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
 import '../../../core/database/app_database.dart' hide Conocido;
 import '../../../core/enums.dart';
@@ -75,122 +76,134 @@ class ExpensesRepository implements IExpensesRepository {
 
   @override
   Future<void> guardarTransaccionesSincronizadas(List<Transaccion> transaccionesList) async {
-    // 1. Obtener categorías existentes para hacer el mapeo inteligente
+    debugPrint('🚩 [REPO_FLAG 1: INICIO GUARDAR SYNC] Recibidas ${transaccionesList.length} transacciones de red.');
+    
+    // PASO 1: Obtener categorías y lista de conocidos existente en la BDD
     final categoriasExistentes = await db.select(db.categorias).get();
-    
-    // 2. Obtener conocidos existentes para traducción de nombres
     final conocidosExistentes = await db.select(db.conocidos).get();
-    
-    int? findCategoryIdByName(String name) {
-      try {
-        return categoriasExistentes.firstWhere((c) => c.nombre.toLowerCase() == name.toLowerCase()).id;
-      } catch (_) {
-        return null;
-      }
+    debugPrint('🚩 [REPO_FLAG 2: ESTADO INICIAL BBDD] Total conocidos en BBDD: ${conocidosExistentes.length}');
+    for (final c in conocidosExistentes) {
+      debugPrint('   -> Conocido BBDD: id=${c.id}, nombre="${c.nombre} ${c.apellido}", mpUserId="${c.mpUserId}"');
     }
 
-    final idComida = findCategoryIdByName('Comida');
-    final idFacultad = findCategoryIdByName('Facultad');
-    final idTransporte = findCategoryIdByName('Transporte');
-    final idVarios = findCategoryIdByName('Varios');
-    final idIngreso = findCategoryIdByName('Ingreso/Sueldo');
-    final idAmigos = findCategoryIdByName('Amigos');
-    final idFarmacia = findCategoryIdByName('Farmacia');
+    int? findCategoryIdByName(String name) {
+      final match = categoriasExistentes.where((c) => c.nombre.toLowerCase() == name.toLowerCase());
+      return match.isNotEmpty ? match.first.id : null;
+    }
 
-    // Fecha límite de corte del lado del cliente: 4 de agosto de 2026 a las 23:35 hs (UTC-3) -> 2026-08-05T02:35:00.000Z
+    final idVarios = findCategoryIdByName('Varios');
+    final catFallbackId = idVarios ?? 1;
+
+    // Fecha límite de corte del lado del cliente
     final cutoffDate = DateTime.parse('2026-08-05T02:35:00Z');
 
-    // 3. Guardar transacciones
+    // PASO 2: Mapear e insertar / actualizar transacciones entrantes de la red
     for (final item in transaccionesList) {
       if (item.mpPaymentId == null) continue;
 
-      // Ignorar transacciones previas a la fecha de corte (doble seguridad)
+      // Ignorar transacciones previas a la fecha de corte
       if (item.fecha.isBefore(cutoffDate)) continue;
+
+      final int categoriaFinalId = (item.categoriaId > 0) ? item.categoriaId : catFallbackId;
+      final cleanContraparteMpId = item.contraparteMpId?.trim();
+
+      debugPrint('🚩 [REPO_FLAG 3: PROCESANDO ITEM] paymentId=${item.mpPaymentId}, desc="${item.descripcion}", contraparteMpId="$cleanContraparteMpId"');
 
       // Verificar duplicados por ID único de Mercado Pago
       final query = db.select(db.transacciones)
         ..where((t) => t.mpPaymentId.equals(item.mpPaymentId!));
       final result = await query.get();
+      final existing = result.isNotEmpty ? result.first : null;
 
-      // Buscar si la contraparte es un conocido guardado para auto-resolver conocidoId
-    int? conocidoId = item.conocidoId;
-    
-    if (item.contraparteMpId != null) {
-      // Caso A: Si la transacción ya tiene un conocidoId asociado localmente, 
-      // actualizamos el mpUserId de ese conocido para vincularlo a futuro.
-      if (conocidoId != null) {
+      if (existing != null) {
+        debugPrint('   -> Registro ya existente en BBDD local: txId=${existing.id}, conocidoIdActual=${existing.conocidoId}, contraparteActual="${existing.contraparteMpId}"');
+      } else {
+        debugPrint('   -> Nueva transacción a insertar.');
+      }
+
+      // 1. Determinar el conocidoId final (preservar conocidoId si la transacción ya lo tenía guardado)
+      int? conocidoId = item.conocidoId ?? existing?.conocidoId;
+
+      // 2. Si no tenía conocidoId aún pero tenemos contraparteMpId, buscar si coincide con algún conocido existente
+      if (conocidoId == null && cleanContraparteMpId != null && cleanContraparteMpId.isNotEmpty) {
         try {
           final matchedConocido = conocidosExistentes.firstWhere(
-            (c) => c.id == conocidoId,
-          );
-          // Si el conocido aún no tenía guardado su MP ID, se le asigna
-          if (matchedConocido.mpUserId != item.contraparteMpId) {
-            await (db.update(db.conocidos)..where((c) => c.id.equals(conocidoId!)))
-              .write(ConocidosCompanion(
-                mpUserId: Value(item.contraparteMpId),
-              ));
-          }
-        } catch (_) {}
-      } 
-      // Caso B: Si la transacción NO tiene conocidoId, buscamos si algún conocido 
-      // guardado tiene este mismo ID de Mercado Pago.
-      else {
-        try {
-          final matchedConocido = conocidosExistentes.firstWhere(
-            (c) => c.mpUserId == item.contraparteMpId,
+            (c) => c.mpUserId != null && c.mpUserId!.trim() == cleanContraparteMpId,
           );
           conocidoId = matchedConocido.id;
+          debugPrint('   -> Coincidencia hallada por mpUserId: asignando conocidoId=$conocidoId ("${matchedConocido.nombre}")');
+        } catch (_) {
+          debugPrint('   -> No hay ningún conocido guardado con mpUserId="$cleanContraparteMpId"');
+        }
+      }
+
+      // 3. AUTO-VINCULACIÓN: Si tenemos conocidoId Y contraparteMpId, aseguramos persisitr el mpUserId
+      if (conocidoId != null && cleanContraparteMpId != null && cleanContraparteMpId.isNotEmpty) {
+        final idx = conocidosExistentes.indexWhere((c) => c.id == conocidoId);
+        if (idx != -1) {
+          final conocido = conocidosExistentes[idx];
+          debugPrint('🚩 [REPO_FLAG 4: AUTO-VINCULACIÓN] Evaluando conocido id=$conocidoId ("${conocido.nombre}"), mpUserIdActual="${conocido.mpUserId}" contra nuevo mpId="$cleanContraparteMpId"');
+
+          if (conocido.mpUserId == null || conocido.mpUserId!.trim().isEmpty || conocido.mpUserId!.trim() != cleanContraparteMpId) {
+            await (db.update(db.conocidos)..where((c) => c.id.equals(conocidoId!)))
+                .write(ConocidosCompanion(mpUserId: Value(cleanContraparteMpId)));
+
+            conocidosExistentes[idx] = conocido.copyWith(mpUserId: Value(cleanContraparteMpId));
+            debugPrint('✅ [EXITO AUTO-VINCULAR] Guardado mpUserId "$cleanContraparteMpId" al conocido id=$conocidoId (${conocido.nombre})');
+          }
+        }
+      }
+
+      // 4. Definir la descripción según el conocidoId final
+      String finalDesc = 'Transferencia';
+
+      if (conocidoId != null) {
+        try {
+          final conocido = conocidosExistentes.firstWhere((c) => c.id == conocidoId);
+          finalDesc = '${conocido.nombre} ${conocido.apellido}'.trim();
         } catch (_) {}
+      } else if (item.descripcion.isNotEmpty) {
+        finalDesc = item.descripcion;
       }
-    }
 
-      // Encriptar / guardar nombre de contraparte genérica en la descripción
-      // Si la descripción de MP es genérica ("Transferencia") pero viene con destinatarioEmisor, lo adjuntamos a la descripción
-      // Esto previene perder quién envió/recibió la plata si no hay un conocido guardado aún!
-    String finalDesc = 'Transferencia';
-
-    if (conocidoId != null) {
-      try {
-        final conocido = conocidosExistentes.firstWhere((c) => c.id == conocidoId);
-        finalDesc = '${conocido.nombre} ${conocido.apellido}'.trim();
-      } catch (_) {}
-    } else if (item.descripcion.isNotEmpty) {
-      finalDesc = item.descripcion;
-    }
-
-      final catId = idVarios ?? 1;
-
-      if (result.isEmpty) {
-      await db.into(db.transacciones).insert(
-            TransaccionesCompanion.insert(
-              descripcion: finalDesc,
-              monto: item.monto,
-              fecha: item.fecha,
-              tipo: item.tipo,
-              categoriaId: catId,
-              mpPaymentId: Value(item.mpPaymentId),
-              proveedor: const Value('MP'),
+      // 5. Inserción o Actualización en BDD
+      if (existing == null) {
+        await db.into(db.transacciones).insert(
+              TransaccionesCompanion.insert(
+                descripcion: finalDesc,
+                monto: item.monto,
+                fecha: item.fecha,
+                tipo: item.tipo,
+                categoriaId: categoriaFinalId,
+                mpPaymentId: Value(item.mpPaymentId),
+                proveedor: const Value('MP'),
+                conocidoId: Value(conocidoId),
+                contraparteMpId: Value(cleanContraparteMpId),
+              ),
+            );
+        debugPrint('   -> Insertada transacción nueva en BBDD local.');
+      } else {
+        // Auto-curación de transacciones guardadas previamente
+        if (existing.tipo != item.tipo || 
+            existing.descripcion != finalDesc ||
+            existing.conocidoId != conocidoId ||
+            existing.categoriaId != categoriaFinalId ||
+            existing.contraparteMpId != cleanContraparteMpId) {
+          await (db.update(db.transacciones)..where((t) => t.id.equals(existing.id)))
+            .write(TransaccionesCompanion(
+              tipo: Value(item.tipo),
+              descripcion: Value(finalDesc),
+              categoriaId: Value(categoriaFinalId),
               conocidoId: Value(conocidoId),
-              contraparteMpId: Value(item.contraparteMpId),
-            ),
-          );
-    } else {
-      final existing = result.first;
-      if (existing.tipo != item.tipo || 
-          existing.descripcion != finalDesc ||
-          existing.conocidoId != conocidoId ||
-          existing.categoriaId != catId) {
-        await (db.update(db.transacciones)..where((t) => t.id.equals(existing.id)))
-          .write(TransaccionesCompanion(
-            tipo: Value(item.tipo),
-            descripcion: Value(finalDesc),
-            categoriaId: Value(catId),
-            conocidoId: Value(conocidoId),
-            contraparteMpId: Value(item.contraparteMpId),
-          ));
-      }
+              contraparteMpId: Value(cleanContraparteMpId),
+            ));
+          debugPrint('   -> Actualizada transacción id=${existing.id} con nuevo conocidoId=$conocidoId, desc="$finalDesc"');
+        }
       }
     }
+
+    // PASO 3: Un solo autocompletado final para propagar cualquier cambio reciente en cascada
+    debugPrint('🚩 [REPO_FLAG 5: EJECUTANDO AUTOCOMPLETAR EN CASCADA]');
     await autocompletarIdsConocidos();
   }
 
@@ -201,28 +214,27 @@ class ExpensesRepository implements IExpensesRepository {
 
   @override
   Future<void> actualizarTransaccion(int id, String descripcion, int categoriaId, {int? conocidoId}) async {
+    debugPrint('🚩 [REPO_FLAG: ACTUALIZAR TRANSACCIÓN] txId=$id, conocidoIdSeleccionado=$conocidoId');
     // 1. Obtener la transacción actual para ver si tiene contraparteMpId
     final query = db.select(db.transacciones)..where((t) => t.id.equals(id));
     final list = await query.get();
     if (list.isNotEmpty) {
       final tx = list.first;
-      
+      debugPrint('   -> Transacción en BBDD: contraparteMpId="${tx.contraparteMpId}"');
+
       // 2. Si se seleccionó un conocido y la transacción tiene contraparteMpId
-      if (conocidoId != null && tx.contraparteMpId != null) {
+      if (conocidoId != null && tx.contraparteMpId != null && tx.contraparteMpId!.trim().isNotEmpty) {
         final conQuery = db.select(db.conocidos)..where((c) => c.id.equals(conocidoId));
         final conList = await conQuery.get();
         if (conList.isNotEmpty) {
           final conocido = conList.first;
-          
-          // Si el conocido no tiene mpUserId cargado, se lo asignamos
-          if (conocido.mpUserId == null || conocido.mpUserId!.trim().isEmpty) {
-            await (db.update(db.conocidos)..where((c) => c.id.equals(conocidoId)))
-                .write(ConocidosCompanion(mpUserId: Value(tx.contraparteMpId!.trim())));
-          }
-          
-          // Propagar el conocidoId a todas las transacciones que tengan esta contraparte
-          await (db.update(db.transacciones)..where((t) => t.contraparteMpId.equals(tx.contraparteMpId!.trim())))
-              .write(TransaccionesCompanion(conocidoId: Value(conocidoId)));
+          final nombreCompleto = '${conocido.nombre} ${conocido.apellido}'.trim();
+          debugPrint('🚩 [REPO_FLAG: ACTUALIZAR TRANSACCIÓN] Asociando mpUserId="${tx.contraparteMpId}" al conocido id=$conocidoId ("$nombreCompleto")');
+          await asociarTransaccionesConConocido(
+            mpUserId: tx.contraparteMpId!.trim(),
+            conocidoId: conocidoId,
+            nombreCompleto: nombreCompleto,
+          );
         }
       }
     }
@@ -238,6 +250,7 @@ class ExpensesRepository implements IExpensesRepository {
 
   @override
   Future<void> asociarConocidoATransaccion(int transaccionId, int conocidoId) async {
+    debugPrint('🚩 [REPO_FLAG: ASOCIAR CONOCIDO A TX] txId=$transaccionId, conocidoId=$conocidoId');
     final query = db.select(db.transacciones)..where((t) => t.id.equals(transaccionId));
     final list = await query.get();
     if (list.isEmpty) return;
@@ -246,14 +259,14 @@ class ExpensesRepository implements IExpensesRepository {
     await (db.update(db.transacciones)..where((t) => t.id.equals(transaccionId)))
         .write(TransaccionesCompanion(conocidoId: Value(conocidoId)));
 
-    if (tx.contraparteMpId != null) {
+    if (tx.contraparteMpId != null && tx.contraparteMpId!.trim().isNotEmpty) {
       final conocidoQuery = db.select(db.conocidos)..where((c) => c.id.equals(conocidoId));
       final conList = await conocidoQuery.get();
       if (conList.isNotEmpty) {
         final conocido = conList.first;
         final nombreCompleto = '${conocido.nombre} ${conocido.apellido}'.trim();
         await asociarTransaccionesConConocido(
-          mpUserId: tx.contraparteMpId!,
+          mpUserId: tx.contraparteMpId!.trim(),
           conocidoId: conocidoId,
           nombreCompleto: nombreCompleto,
         );
@@ -261,26 +274,46 @@ class ExpensesRepository implements IExpensesRepository {
     }
   }
 
-  // --- MÉTODOS DE CONOCIDOS ---
+  @override
   Future<void> autocompletarIdsConocidos() async {
+    debugPrint('🚩 [AUTOCOMPLETE_FLAG] Inicio de autocompletarIdsConocidos');
     final conocidosList = await db.select(db.conocidos).get();
+    debugPrint('   -> Total de conocidos registrados: ${conocidosList.length}');
+
     for (final conocido in conocidosList) {
-      if (conocido.mpUserId == null || conocido.mpUserId!.trim().isEmpty) {
+      final nombreCompleto = '${conocido.nombre} ${conocido.apellido}'.trim();
+      debugPrint('   -> Evaluando conocido id=${conocido.id}, nombre="$nombreCompleto", mpUserId="${conocido.mpUserId}"');
+
+      // Caso A: El conocido ya tiene mpUserId. Propagar a transacciones que coincidan.
+      if (conocido.mpUserId != null && conocido.mpUserId!.trim().isNotEmpty) {
+        final mpIdVal = conocido.mpUserId!.trim();
+        debugPrint('      [Caso A] mpUserId="$mpIdVal" no nulo. Propagando asociación...');
+        await asociarTransaccionesConConocido(
+          mpUserId: mpIdVal,
+          conocidoId: conocido.id,
+          nombreCompleto: nombreCompleto,
+        );
+      } 
+      // Caso B: El conocido NO tiene mpUserId. Buscar si hay transacciones asociadas que tengan contraparteMpId.
+      else {
+        debugPrint('      [Caso B] mpUserId es NULO. Buscando transacciones locales vinculadas a conocidoId=${conocido.id}...');
         final query = db.select(db.transacciones)
-          ..where((t) => t.conocidoId.equals(conocido.id) & t.contraparteMpId.isNotNull())
-          ..limit(1);
+          ..where((t) => t.conocidoId.equals(conocido.id));
         final txList = await query.get();
-        if (txList.isNotEmpty) {
-          final tx = txList.first;
-          if (tx.contraparteMpId != null && tx.contraparteMpId!.trim().isNotEmpty) {
-            final mpIdVal = tx.contraparteMpId!.trim();
-            // Actualizar mpUserId del conocido
-            await (db.update(db.conocidos)..where((c) => c.id.equals(conocido.id)))
-                .write(ConocidosCompanion(mpUserId: Value(mpIdVal)));
-            // Propagar conocidoId a todas las transacciones con este ID
-            await (db.update(db.transacciones)..where((t) => t.contraparteMpId.equals(mpIdVal)))
-                .write(TransaccionesCompanion(conocidoId: Value(conocido.id)));
-          }
+        debugPrint('      [Caso B] Transacciones encontradas con conocidoId=${conocido.id}: ${txList.length}');
+        
+        final txConContraparte = txList.where((t) => t.contraparteMpId != null && t.contraparteMpId!.trim().isNotEmpty).toList();
+        if (txConContraparte.isNotEmpty) {
+          final tx = txConContraparte.first;
+          final mpIdVal = tx.contraparteMpId!.trim();
+          debugPrint('      [Caso B Match!] ¡Encontrada tx con contraparteMpId="$mpIdVal"! Asociando al conocido id=${conocido.id}...');
+          await asociarTransaccionesConConocido(
+            mpUserId: mpIdVal,
+            conocidoId: conocido.id,
+            nombreCompleto: nombreCompleto,
+          );
+        } else {
+          debugPrint('      [Caso B] Ninguna transacción asociada a id=${conocido.id} tiene contraparteMpId.');
         }
       }
     }
@@ -299,21 +332,64 @@ class ExpensesRepository implements IExpensesRepository {
   }
 
   @override
-  Future<int> guardarConocido({required String nombre, required String apellido, String? mpUserId}) async {
-    if (mpUserId != null && mpUserId.trim().isNotEmpty) {
-      final query = db.select(db.conocidos)..where((c) => c.mpUserId.equals(mpUserId.trim()));
+  Future<int> guardarConocido({int? id, required String nombre, required String apellido, String? mpUserId}) async {
+    final mpIdVal = mpUserId?.trim();
+
+    if (id != null) {
+      // Edición explícita de conocido existente
+      await (db.update(db.conocidos)..where((c) => c.id.equals(id)))
+          .write(ConocidosCompanion(
+            nombre: Value(nombre),
+            apellido: Value(apellido),
+            mpUserId: Value(mpIdVal),
+          ));
+      
+      if (mpIdVal != null && mpIdVal.isNotEmpty) {
+        await asociarTransaccionesConConocido(
+          mpUserId: mpIdVal,
+          conocidoId: id,
+          nombreCompleto: '$nombre $apellido'.trim(),
+        );
+      }
+      return id;
+    }
+
+    if (mpIdVal != null && mpIdVal.isNotEmpty) {
+      final query = db.select(db.conocidos)..where((c) => c.mpUserId.equals(mpIdVal));
       final exists = await query.get();
       if (exists.isNotEmpty) {
-        return exists.first.id;
+        final existingId = exists.first.id;
+        await (db.update(db.conocidos)..where((c) => c.id.equals(existingId)))
+            .write(ConocidosCompanion(
+              nombre: Value(nombre),
+              apellido: Value(apellido),
+            ));
+        await asociarTransaccionesConConocido(
+          mpUserId: mpIdVal,
+          conocidoId: existingId,
+          nombreCompleto: '$nombre $apellido'.trim(),
+        );
+        return existingId;
       }
     }
-    return db.into(db.conocidos).insert(
+
+    final newId = await db.into(db.conocidos).insert(
       ConocidosCompanion.insert(
         nombre: nombre,
         apellido: apellido,
-        mpUserId: Value(mpUserId?.trim()),
+        mpUserId: Value(mpIdVal),
       ),
     );
+
+    if (mpIdVal != null && mpIdVal.isNotEmpty) {
+      await asociarTransaccionesConConocido(
+        mpUserId: mpIdVal,
+        conocidoId: newId,
+        nombreCompleto: '$nombre $apellido'.trim(),
+      );
+    }
+
+    return newId;
   }
 
   @override
@@ -330,12 +406,26 @@ class ExpensesRepository implements IExpensesRepository {
     required int conocidoId,
     required String nombreCompleto,
   }) async {
-    await (db.update(db.conocidos)..where((c) => c.id.equals(conocidoId)))
-        .write(ConocidosCompanion(mpUserId: Value(mpUserId.trim())));
+    final cleanMpId = mpUserId.trim();
+    if (cleanMpId.isEmpty) return;
 
-    await (db.update(db.transacciones)..where((t) => t.contraparteMpId.equals(mpUserId.trim())))
+    // Actualizar el conocido con su nuevo mpUserId
+    await (db.update(db.conocidos)..where((c) => c.id.equals(conocidoId)))
+        .write(ConocidosCompanion(mpUserId: Value(cleanMpId)));
+
+    // Asignar conocidoId a las transacciones de esa contraparte
+    await (db.update(db.transacciones)..where((t) => t.contraparteMpId.equals(cleanMpId)))
         .write(TransaccionesCompanion(
           conocidoId: Value(conocidoId),
+        ));
+
+    // PROTECCIÓN DE DESCRIPCIONES (Punto 2):
+    // Solo actualizamos la descripción a 'Nombre Apellido' en las transacciones que tengan la descripción por defecto
+    await (db.update(db.transacciones)
+          ..where((t) => t.contraparteMpId.equals(cleanMpId) & 
+                        (t.descripcion.equals('Transferencia') | t.descripcion.equals(''))))
+        .write(TransaccionesCompanion(
+          descripcion: Value(nombreCompleto),
         ));
   }
 }

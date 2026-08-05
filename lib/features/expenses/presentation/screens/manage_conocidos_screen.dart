@@ -367,6 +367,7 @@ class _UpsertContactoDialogState extends State<_UpsertContactoDialog> {
               if (esEdicion) {
                 // Actualizar contacto existente
                 await widget.notifier.guardarConocido(
+                  id: widget.conocido!.id,
                   nombre: nom,
                   apellido: ape,
                   mpUserId: mpId,
