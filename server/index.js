@@ -127,11 +127,6 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
 
     const results = Array.from(allResultsMap.values());
 
-    console.log(`[DEBUG] Resultados crudos combinados obtenidos de MP (Ingresos: ${ingresosResults.length}, Egresos: ${egresosResults.length}): ${results.length} transacciones.`);
-    if (results.length > 0) {
-      console.log(`[DEBUG] Primera transacción cruda combinada: ID=${results[0].id}, Estado=${results[0].status}, PayerID=${results[0].payer?.id}, CollectorID=${results[0].collector_id}, Monto=${results[0].transaction_amount}`);
-    }
-    
     // Mapeamos y filtramos los pagos aprobados
     const mappedTransactions = results
       .filter(payment => payment.status === 'approved')
@@ -149,8 +144,6 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
           tipo = isCollectorMe ? 'ingreso' : 'egreso';
         }
 
-        console.log(`[DEBUG] Clasificando pago ${payment.id}: tipo=${tipo}, amount=${payment.transaction_amount}, collector=${payment.collector_id}, payer=${payment.payer?.id}, isCollectorMe=${isCollectorMe}, isPayerMe=${isPayerMe}`);
-
         // Determinamos la persona o entidad involucrada (destinatario o emisor)
         let destinatarioEmisor = 'Mercado Pago';
         
@@ -160,9 +153,25 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
           const fullName = `${p.first_name || ''} ${p.last_name || ''}`.trim();
           destinatarioEmisor = fullName || p.email || 'Remitente MP';
         } else {
-          // Si es un egreso, gastamos plata. El destinatario suele estar en la descripción de la compra
-          // o podemos verificar los metadatos de la contraparte
-          destinatarioEmisor = payment.description || 'Mercado Pago';
+          // Si es un egreso, buscamos el nombre del destinatario/receptor
+          const poi = payment.point_of_interaction || {};
+          const td = poi.transaction_data || {};
+          const bt = td.bank_transfer || {};
+          const counterpart = td.counterpart || {};
+          
+          let recipientName = '';
+          if (td.receiver && typeof td.receiver === 'object') {
+            recipientName = td.receiver.name || td.receiver.description || '';
+          }
+          if (!recipientName && bt.receiver && typeof bt.receiver === 'object') {
+            recipientName = bt.receiver.name || bt.receiver.description || '';
+          }
+          if (!recipientName && counterpart.name) {
+            recipientName = counterpart.name;
+          }
+          
+          // Fallback a la descripción de la compra o genérico si no se encuentra
+          destinatarioEmisor = recipientName || payment.description || 'Destinatario MP';
         }
 
         return {
