@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/navigation/app_routes.dart';
+import '../../../../core/widgets/app_logo.dart';
 import '../../../expenses/presentation/controllers/expenses_notifier.dart';
 
 class MainMenuScreen extends StatelessWidget {
@@ -49,7 +50,7 @@ class MainMenuScreen extends StatelessWidget {
                       crossAxisCount: 2,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
-                      childAspectRatio: 1.15,
+                      childAspectRatio: 1.25,
                       children: [
                         _buildMenuCard(
                           context: context,
@@ -81,11 +82,11 @@ class MainMenuScreen extends StatelessWidget {
                         _buildMenuCard(
                           context: context,
                           title: 'Estadísticas',
-                          subtitle: 'Análisis Mensual',
+                          subtitle: 'Resumen Semanal',
                           icon: Icons.bar_chart_rounded,
                           startColor: const Color(0xFF10B981), // Emerald 500
                           endColor: const Color(0xFF047857), // Emerald 700
-                          route: '/analytics_wip', // Placeholder route to trigger Undefined Route dialog
+                          route: AppRoutes.routeStats,
                         ),
                       ],
                     ),
@@ -167,30 +168,23 @@ class MainMenuScreen extends StatelessWidget {
               ),
             ],
           ),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.notifications_none_rounded, color: Color(0xFF0F172A)),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Notificaciones al día'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-            ),
-          )
+          Row(
+            children: [
+              const AppLogo(size: 44),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.notifications_none_rounded, color: Color(0xFF0F172A)),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Notificaciones al día'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ],
       ),
     );

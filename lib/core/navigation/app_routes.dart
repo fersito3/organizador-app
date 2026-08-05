@@ -5,6 +5,7 @@ import '../../features/home/presentation/screens/main_menu_screen.dart';
 import '../../features/calendar/presentation/screens/calendar_screen.dart';
 import '../../features/expenses/presentation/screens/manage_conocidos_screen.dart';
 import '../../features/tasks/presentation/screens/tasks_screen.dart';
+import '../../features/stats/presentation/screens/stats_screen.dart';
 
 class AppRoutes {
   static const String routeHome = '/';
@@ -13,6 +14,7 @@ class AppRoutes {
   static const String routeCalendar = '/calendar';
   static const String routeTasks = '/tasks';
   static const String routeManageConocidos = '/manage-conocidos';
+  static const String routeStats = '/stats';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -45,6 +47,11 @@ class AppRoutes {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const ManageConocidosScreen(),
+        );
+      case routeStats:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const StatsScreen(),
         );
       default:
         return MaterialPageRoute(

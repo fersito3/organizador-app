@@ -232,6 +232,60 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
   }
 });
 
+// 3. Crear una Preferencia de Pago / Cobro en Mercado Pago
+app.post('/api/mercadopago/preference', async (req, res) => {
+  if (!MP_ACCESS_TOKEN) {
+    return res.status(500).json({ error: 'Token de Mercado Pago no configurado en el servidor.' });
+  }
+
+  try {
+    const { title, amount } = req.body;
+    const itemAmount = Number(amount) || 100;
+    const itemTitle = title || 'Cobro de Deuda';
+
+    console.log(`Generando link de cobro MP para: "${itemTitle}" - $${itemAmount}`);
+
+    const preferenceBody = {
+      items: [
+        {
+          title: itemTitle,
+          unit_price: itemAmount,
+          quantity: 1,
+          currency_id: 'ARS',
+        }
+      ],
+      back_urls: {
+        success: 'https://organizador-app.onrender.com/',
+        failure: 'https://organizador-app.onrender.com/',
+        pending: 'https://organizador-app.onrender.com/'
+      },
+      auto_return: 'approved'
+    };
+
+    const response = await axios.post('https://api.mercadopago.com/checkout/preferences', preferenceBody, {
+      headers: {
+        Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log(`✅ Link de cobro generado con éxito. ID: ${response.data.id}`);
+
+    res.json({
+      id: response.data.id,
+      init_point: response.data.init_point, // Link oficial web de cobro MP
+      sandbox_init_point: response.data.sandbox_init_point
+    });
+
+  } catch (error) {
+    console.error('❌ Error al crear preferencia de cobro en Mercado Pago:', error.response ? error.response.data : error.message);
+    res.status(500).json({
+      error: 'Error al generar preferencia de cobro en Mercado Pago',
+      details: error.response ? error.response.data : error.message
+    });
+  }
+});
+
 // Levantar el servidor
 app.listen(PORT, () => {
   console.log(`🚀 Servidor backend corriendo en http://localhost:${PORT}`);

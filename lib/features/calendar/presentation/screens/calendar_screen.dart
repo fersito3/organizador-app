@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' as drift;
 import '../../../../core/database/app_database.dart';
 import '../../../../core/enums.dart';
+import '../../../../core/services/mercadopago_cobro_service.dart';
 import '../../../expenses/domain/models/transaccion.dart';
 import '../controllers/calendar_notifier.dart';
 import '../../../tasks/presentation/controllers/tasks_notifier.dart';
@@ -625,42 +626,45 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                           ),
                                         ],
                                       ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisAlignment: MainAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            e.titulo,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 9.0,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          Text(
-                                            '$horaInicioStr - $horaFinStr',
-                                            style: const TextStyle(
-                                              color: Colors.white70,
-                                              fontSize: 7.5,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          if (e.descripcion != null && e.descripcion!.isNotEmpty && blockHeight >= 45) ...[
+                                      child: SingleChildScrollView(
+                                        physics: const NeverScrollableScrollPhysics(),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          children: [
                                             Text(
-                                              e.descripcion!,
+                                              e.titulo,
                                               style: const TextStyle(
-                                                color: Colors.white60,
-                                                fontSize: 7.0,
+                                                color: Colors.white,
+                                                fontSize: 9.0,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            Text(
+                                              '$horaInicioStr - $horaFinStr',
+                                              style: const TextStyle(
+                                                color: Colors.white70,
+                                                fontSize: 7.5,
+                                                fontWeight: FontWeight.w500,
                                               ),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                             ),
+                                            if (e.descripcion != null && e.descripcion!.isNotEmpty && blockHeight >= 45) ...[
+                                              Text(
+                                                e.descripcion!,
+                                                style: const TextStyle(
+                                                  color: Colors.white60,
+                                                  fontSize: 7.0,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
                                           ],
-                                        ],
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -694,15 +698,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+        return SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 24.0,
+              right: 24.0,
+              top: 24.0,
+              bottom: 24.0 + MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
               Container(
                 width: 40,
                 height: 4,
@@ -755,10 +766,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
             ],
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
   // Modal para ver opciones de evento (Editar / Eliminar)
   void _mostrarOpcionesEvento(
@@ -769,16 +781,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
   ) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        return SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 24.0,
+              right: 24.0,
+              top: 24.0,
+              bottom: 24.0 + MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               Text(
                 e.titulo,
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
@@ -849,25 +868,33 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
             ],
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
   // Modal para ver opciones de tarea (Marcar / Editar / Eliminar)
   void _mostrarOpcionesTarea(BuildContext context, Tarea t, TasksNotifier notifier) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        return SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 24.0,
+              right: 24.0,
+              top: 24.0,
+              bottom: 24.0 + MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               Text(
                 t.titulo,
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
@@ -882,6 +909,30 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 Text(
                   t.descripcion!,
                   style: const TextStyle(fontSize: 14, color: Color(0xFF334155)),
+                ),
+              ],
+              if (t.tipo == TipoTarea.deudas) ...[
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      final monto = notifier.obtenerMontoDeuda(t);
+                      MercadoPagoCobroService.mostrarDialogoCobro(
+                        context,
+                        titulo: t.titulo,
+                        monto: monto > 0 ? monto : 1000.0,
+                      );
+                    },
+                    icon: const Icon(Icons.qr_code_2_rounded, color: Colors.white),
+                    label: const Text('Generar Link de Cobro MP', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF009EE3), // Mercado Pago Blue
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
                 ),
               ],
               const SizedBox(height: 24),
@@ -942,10 +993,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
             ],
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
   // ===========================================================================
   // 🗓️ VISTA MENSUAL

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' as drift;
 import '../../../../core/database/app_database.dart';
 import '../../../../core/enums.dart';
+import '../../../../core/services/mercadopago_cobro_service.dart';
 import '../controllers/tasks_notifier.dart';
 import '../../../expenses/presentation/controllers/expenses_notifier.dart';
 
@@ -308,30 +309,48 @@ class _TasksScreenState extends State<TasksScreen> {
             ),
           ],
         ),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444)),
-          onPressed: () async {
-            final confirm = await showDialog<bool>(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Eliminar Tarea'),
-                content: const Text('¿Deseas eliminar esta tarea de la lista?'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: const Text('Cancelar', style: TextStyle(color: Color(0xFF64748B))),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
-                  ),
-                ],
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (t.tipo == TipoTarea.deudas)
+              IconButton(
+                icon: const Icon(Icons.qr_code_2_rounded, color: Color(0xFF009EE3)),
+                tooltip: 'Generar Link de Cobro Mercado Pago',
+                onPressed: () {
+                  final monto = notifier.obtenerMontoDeuda(t);
+                  MercadoPagoCobroService.mostrarDialogoCobro(
+                    context,
+                    titulo: t.titulo,
+                    monto: monto > 0 ? monto : 1000.0,
+                  );
+                },
               ),
-            );
-            if (confirm == true) {
-              await notifier.eliminarTarea(t.id);
-            }
-          },
+            IconButton(
+              icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444)),
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Eliminar Tarea'),
+                    content: const Text('¿Deseas eliminar esta tarea de la lista?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancelar', style: TextStyle(color: Color(0xFF64748B))),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  await notifier.eliminarTarea(t.id);
+                }
+              },
+            ),
+          ],
         ),
       ),
     );
