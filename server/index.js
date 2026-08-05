@@ -128,11 +128,20 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
     const mappedTransactions = results
       .filter(payment => payment.status === 'approved')
       .map(payment => {
-        // Determinamos si es un ingreso o egreso
-        // Si el colector (collector_id) coincide con nuestro ID de cuenta, recibimos el dinero (ingreso)
-        // De lo contrario, pagamos/transferimos a otra cuenta (egreso)
-        const isCollectorOwner = ownerId && payment.collector_id && String(payment.collector_id) === String(ownerId);
-        const tipo = isCollectorOwner ? 'ingreso' : 'egreso';
+        // Determinamos si es un ingreso o egreso de forma ultra robusta
+        const isCollectorMe = ownerId && payment.collector_id && String(payment.collector_id) === String(ownerId);
+        const isPayerMe = ownerId && payment.payer && payment.payer.id && String(payment.payer.id) === String(ownerId);
+        
+        let tipo = 'egreso'; // Por defecto
+        if (isCollectorMe && !isPayerMe) {
+          tipo = 'ingreso';
+        } else if (isPayerMe && !isCollectorMe) {
+          tipo = 'egreso';
+        } else {
+          tipo = isCollectorMe ? 'ingreso' : 'egreso';
+        }
+
+        console.log(`[DEBUG] Clasificando pago ${payment.id}: tipo=${tipo}, amount=${payment.transaction_amount}, collector=${payment.collector_id}, payer=${payment.payer?.id}, isCollectorMe=${isCollectorMe}, isPayerMe=${isPayerMe}`);
 
         // Determinamos la persona o entidad involucrada (destinatario o emisor)
         let destinatarioEmisor = 'Mercado Pago';

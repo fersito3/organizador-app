@@ -97,49 +97,49 @@ class ExpensesRepository implements IExpensesRepository {
         ..where((t) => t.mpPaymentId.equals(item.mpPaymentId!));
       final result = await query.get();
 
-      if (result.isEmpty) {
-        // Algoritmo de categorización inteligente
-        int catId = idVarios ?? 1; // Fallback por defecto
-        
-        if (item.tipo == TipoTransaccion.ingreso) {
-          catId = idIngreso ?? catId;
-        } else {
-          final desc = item.descripcion.toLowerCase();
-          if (desc.contains('coto') ||
-              desc.contains('pedidosya') ||
-              desc.contains('comida') ||
-              desc.contains('almuerzo') ||
-              desc.contains('restaurant') ||
-              desc.contains('burger') ||
-              desc.contains('mcdonald') ||
-              desc.contains('supermercado') ||
-              desc.contains('carrefour') ||
-              desc.contains('dia') ||
-              desc.contains('rotiseria') ||
-              desc.contains('chino')) {
-            catId = idComida ?? catId;
-          } else if (desc.contains('facu') ||
-              desc.contains('facultad') ||
-              desc.contains('universidad') ||
-              desc.contains('copia') ||
-              desc.contains('apunte') ||
-              desc.contains('libro') ||
-              desc.contains('cuaderno')) {
-            catId = idFacultad ?? catId;
-          } else if (desc.contains('subte') ||
-              desc.contains('colectivo') ||
-              desc.contains('uber') ||
-              desc.contains('cabify') ||
-              desc.contains('didi') ||
-              desc.contains('sube') ||
-              desc.contains('nafta') ||
-              desc.contains('combustible') ||
-              desc.contains('peaje') ||
-              desc.contains('estacionamiento')) {
-            catId = idTransporte ?? catId;
-          }
+      // Algoritmo de categorización inteligente
+      int catId = idVarios ?? 1; // Fallback por defecto
+      
+      if (item.tipo == TipoTransaccion.ingreso) {
+        catId = idIngreso ?? catId;
+      } else {
+        final desc = item.descripcion.toLowerCase();
+        if (desc.contains('coto') ||
+            desc.contains('pedidosya') ||
+            desc.contains('comida') ||
+            desc.contains('almuerzo') ||
+            desc.contains('restaurant') ||
+            desc.contains('burger') ||
+            desc.contains('mcdonald') ||
+            desc.contains('supermercado') ||
+            desc.contains('carrefour') ||
+            desc.contains('dia') ||
+            desc.contains('rotiseria') ||
+            desc.contains('chino')) {
+          catId = idComida ?? catId;
+        } else if (desc.contains('facu') ||
+            desc.contains('facultad') ||
+            desc.contains('universidad') ||
+            desc.contains('copia') ||
+            desc.contains('apunte') ||
+            desc.contains('libro') ||
+            desc.contains('cuaderno')) {
+          catId = idFacultad ?? catId;
+        } else if (desc.contains('subte') ||
+            desc.contains('colectivo') ||
+            desc.contains('uber') ||
+            desc.contains('cabify') ||
+            desc.contains('didi') ||
+            desc.contains('sube') ||
+            desc.contains('nafta') ||
+            desc.contains('combustible') ||
+            desc.contains('peaje') ||
+            desc.contains('estacionamiento')) {
+          catId = idTransporte ?? catId;
         }
+      }
 
+      if (result.isEmpty) {
         // Insertar en la base de datos SQLite
         await db.into(db.transacciones).insert(
               TransaccionesCompanion.insert(
@@ -153,6 +153,17 @@ class ExpensesRepository implements IExpensesRepository {
                 proveedor: const Value('MP'),
               ),
             );
+      } else {
+        // Auto-curación de transacciones guardadas incorrectamente en el historial
+        final existing = result.first;
+        if (existing.tipo != item.tipo || existing.destinatarioEmisor != item.destinatarioEmisor) {
+          await (db.update(db.transacciones)..where((t) => t.id.equals(existing.id)))
+            .write(TransaccionesCompanion(
+              tipo: Value(item.tipo),
+              destinatarioEmisor: Value(item.destinatarioEmisor),
+              categoriaId: Value(catId),
+            ));
+        }
       }
     }
   }
