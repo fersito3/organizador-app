@@ -753,7 +753,47 @@ class _TransactionDetailModalState extends State<_TransactionDetailModal> {
                 ),
                 const SizedBox(height: 14),
 
-                if (widget.item.destinatarioEmisor != null && widget.item.destinatarioEmisor!.isNotEmpty) ...[
+                if (widget.item.contraparteMpId != null) ...[
+                  if (widget.item.conocidoId != null) ...[
+                    _buildDetailRow(
+                      icon: Icons.person_rounded,
+                      label: 'Contacto',
+                      valueWidget: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD1FAE5),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          widget.item.destinatarioEmisor ?? 'Conocido',
+                          style: const TextStyle(
+                            color: Color(0xFF065F46),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ] else ...[
+                    _buildDetailRow(
+                      icon: Icons.person_add_rounded,
+                      label: 'Contacto',
+                      valueWidget: ElevatedButton(
+                        onPressed: () => _mostrarDialogoVinculacion(context, widget.item.contraparteMpId!, notifier),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0F172A),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('Vincular / Crear', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 14),
+                ] else if (widget.item.destinatarioEmisor != null && widget.item.destinatarioEmisor!.isNotEmpty) ...[
                   _buildDetailRow(
                     icon: Icons.person_rounded,
                     label: esEgreso ? 'Destinatario' : 'Emisor / Remitente',
@@ -983,6 +1023,211 @@ class _TransactionDetailModalState extends State<_TransactionDetailModal> {
             ),
           ),
       ],
+    );
+  }
+
+  void _mostrarDialogoVinculacion(
+    BuildContext context,
+    String contraparteMpId,
+    ExpensesNotifier notifier,
+  ) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            final conocidosSinMp = notifier.conocidos.where((c) => c.mpUserId == null).toList();
+            
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Text(
+                'Vincular Contacto',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'ID de Mercado Pago: $contraparteMpId',
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(height: 1),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Opción A: Vincular a existente',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                    ),
+                    const SizedBox(height: 8),
+                    if (conocidosSinMp.isEmpty)
+                      const Text(
+                        'No hay contactos sin ID MP.',
+                        style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontStyle: FontStyle.italic),
+                      )
+                    else
+                      DropdownButtonFormField<int>(
+                        decoration: InputDecoration(
+                          hintText: 'Seleccionar contacto',
+                          hintStyle: const TextStyle(fontSize: 13),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        items: conocidosSinMp.map((c) {
+                          return DropdownMenuItem<int>(
+                            value: c.id,
+                            child: Text(c.nombreCompleto, style: const TextStyle(fontSize: 13)),
+                          );
+                        }).toList(),
+                        onChanged: (value) async {
+                          if (value != null) {
+                            final c = conocidosSinMp.firstWhere((x) => x.id == value);
+                            Navigator.pop(dialogContext);
+                            Navigator.pop(context);
+                            await notifier.asociarTransaccionesConConocido(
+                              mpUserId: contraparteMpId,
+                              conocidoId: c.id,
+                              nombreCompleto: c.nombreCompleto,
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Transacciones vinculadas con éxito a ${c.nombreCompleto}.'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    const SizedBox(height: 20),
+                    const Divider(height: 1),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Opción B: Crear nuevo conocido',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                    ),
+                    const SizedBox(height: 10),
+                    _BuildNewConocidoForm(
+                      contraparteMpId: contraparteMpId,
+                      notifier: notifier,
+                      dialogContext: dialogContext,
+                      parentContext: context,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancelar', style: TextStyle(color: Color(0xFF64748B))),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _BuildNewConocidoForm extends StatefulWidget {
+  final String contraparteMpId;
+  final ExpensesNotifier notifier;
+  final BuildContext dialogContext;
+  final BuildContext parentContext;
+
+  const _BuildNewConocidoForm({
+    required this.contraparteMpId,
+    required this.notifier,
+    required this.dialogContext,
+    required this.parentContext,
+  });
+
+  @override
+  State<_BuildNewConocidoForm> createState() => _BuildNewConocidoFormState();
+}
+
+class _BuildNewConocidoFormState extends State<_BuildNewConocidoForm> {
+  final _formKey = GlobalKey<FormState>();
+  final _nombreController = TextEditingController();
+  final _apellidoController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nombreController.dispose();
+    _apellidoController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        children: [
+          TextFormField(
+            controller: _nombreController,
+            style: const TextStyle(fontSize: 13),
+            decoration: InputDecoration(
+              labelText: 'Nombre',
+              labelStyle: const TextStyle(fontSize: 12),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+          ),
+          const SizedBox(height: 10),
+          TextFormField(
+            controller: _apellidoController,
+            style: const TextStyle(fontSize: 13),
+            decoration: InputDecoration(
+              labelText: 'Apellido (Opcional)',
+              labelStyle: const TextStyle(fontSize: 12),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton(
+            onPressed: () async {
+              if (_formKey.currentState!.validate()) {
+                final nom = _nombreController.text.trim();
+                final ape = _apellidoController.text.trim();
+                
+                final newId = await widget.notifier.guardarConocido(
+                  nombre: nom,
+                  apellido: ape,
+                  mpUserId: widget.contraparteMpId,
+                );
+
+                final nombreCompleto = '$nom $ape'.trim();
+                await widget.notifier.asociarTransaccionesConConocido(
+                  mpUserId: widget.contraparteMpId,
+                  conocidoId: newId,
+                  nombreCompleto: nombreCompleto,
+                );
+
+                Navigator.pop(widget.dialogContext);
+                Navigator.pop(widget.parentContext);
+
+                ScaffoldMessenger.of(widget.parentContext).showSnackBar(
+                  SnackBar(
+                    content: Text('Conocido $nombreCompleto creado y transacciones vinculadas.'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.white,
+              minimumSize: const Size.fromHeight(38),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Crear y Vincular', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
     );
   }
 }

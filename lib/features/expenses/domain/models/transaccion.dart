@@ -10,6 +10,8 @@ class Transaccion {
   final String? destinatarioEmisor; // Emisor/Receptor de la transferencia o pago
   final String? mpPaymentId; // ID de pago en Mercado Pago
   final String proveedor; // 'MP' o 'MANUAL'
+  final int? conocidoId; // ID del conocido asociado (V4)
+  final String? contraparteMpId; // ID MP de la contraparte (V4)
 
   Transaccion({
     required this.id,
@@ -21,5 +23,7 @@ class Transaccion {
     this.destinatarioEmisor,
     this.mpPaymentId,
     this.proveedor = 'MANUAL',
+    this.conocidoId,
+    this.contraparteMpId,
   });
 }

@@ -30,9 +30,21 @@ class Transacciones extends Table {
   // Campos específicos para la integración con Mercado Pago
   TextColumn get mpPaymentId => text().nullable()(); // ID único del pago en Mercado Pago (evita duplicados)
   TextColumn get proveedor => text().withLength(min: 1, max: 50).withDefault(const Constant('MANUAL'))(); // 'MP' o 'MANUAL'
+
+  // Campos nuevos para Conocidos (V4)
+  IntColumn get conocidoId => integer().nullable().references(Conocidos, #id)();
+  TextColumn get contraparteMpId => text().nullable()();
 }
 
-// --- 3. TABLA DE EVENTOS DE CALENDARIO (Horarios, Clases, Rutinas) ---
+// --- 3. TABLA DE CONOCIDOS (Contactos / Personas) ---
+class Conocidos extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get nombre => text().withLength(min: 1, max: 100)();
+  TextColumn get apellido => text().withLength(min: 0, max: 100)();
+  TextColumn get mpUserId => text().nullable().unique()(); // ID de Mercado Pago único e opcional
+}
+
+// --- 4. TABLA DE EVENTOS DE CALENDARIO (Horarios, Clases, Rutinas) ---
 class Eventos extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get titulo => text().withLength(min: 1, max: 100)(); // Ej: "Arquitectura de Computadoras"
@@ -61,12 +73,12 @@ class Tareas extends Table {
 }
 
 // --- CLASE PRINCIPAL DE LA BASE DE DATOS ---
-@DriftDatabase(tables: [Categorias, Transacciones, Eventos, Tareas])
+@DriftDatabase(tables: [Categorias, Transacciones, Eventos, Tareas, Conocidos])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3; // Incrementamos la versión del esquema para reflejar el nuevo campo
+  int get schemaVersion => 4; // Incrementamos a la versión 4 para agregar Conocidos
 
   @override
   MigrationStrategy get migration {
@@ -76,8 +88,13 @@ class AppDatabase extends _$AppDatabase {
       },
       onUpgrade: (Migrator m, int from, int to) async {
         if (from < 3) {
-          // Agrega la columna de forma segura sin borrar datos existentes
           await m.addColumn(transacciones, transacciones.destinatarioEmisor);
+        }
+        if (from < 4) {
+          // Crear la nueva tabla de Conocidos y añadir campos a Transacciones
+          await m.createTable(conocidos);
+          await m.addColumn(transacciones, transacciones.conocidoId);
+          await m.addColumn(transacciones, transacciones.contraparteMpId);
         }
       },
       beforeOpen: (details) async {
@@ -108,6 +125,26 @@ class AppDatabase extends _$AppDatabase {
     await insertarSiNoExiste('Ingreso/Sueldo', '009688', TipoTransaccion.ingreso);
     await insertarSiNoExiste('Amigos', 'E91E63', TipoTransaccion.egreso); // Rosa/Amigos
     await insertarSiNoExiste('Farmacia', '00BCD4', TipoTransaccion.egreso); // Cyan/Farmacia
+  }
+
+  Future<void> inicializarConocidosBase() async {
+    final conocidosExistentes = await select(conocidos).get();
+    
+    Future<void> insertarSiNoExiste(String nombre, String apellido, String mpUserId) async {
+      final match = conocidosExistentes.where((c) => c.mpUserId == mpUserId);
+      if (match.isEmpty) {
+        await into(conocidos).insert(ConocidosCompanion.insert(
+          nombre: nombre,
+          apellido: apellido,
+          mpUserId: Value(mpUserId),
+        ));
+      }
+    }
+
+    // 1. Yo mismo: Fersito (446191311)
+    await insertarSiNoExiste('Fersito', 'Yo Mismo', '446191311');
+    // 2. Mi Mamá (343761118)
+    await insertarSiNoExiste('Mamá', '', '343761118');
   }
 }
 

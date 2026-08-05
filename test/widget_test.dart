@@ -6,6 +6,7 @@ import 'package:organizador_app/features/expenses/domain/usecases/get_transactio
 import 'package:organizador_app/features/expenses/presentation/controllers/expenses_notifier.dart';
 import 'package:organizador_app/features/expenses/domain/models/transaccion.dart';
 import 'package:organizador_app/features/expenses/domain/models/categoria_domain.dart';
+import 'package:organizador_app/features/expenses/domain/models/conocido.dart';
 import 'package:organizador_app/features/expenses/presentation/screens/expenses_screen.dart';
 import 'package:organizador_app/core/enums.dart';
 
@@ -47,6 +48,8 @@ class MockExpensesRepository implements IExpensesRepository {
     required TipoTransaccion tipo,
     required int categoriaId,
     String? destinatarioEmisor,
+    int? conocidoId,
+    String? contraparteMpId,
   }) async {
     return 1;
   }
@@ -59,6 +62,15 @@ class MockExpensesRepository implements IExpensesRepository {
 
   @override
   Future<void> actualizarTransaccion(int id, String descripcion, int categoriaId) async {}
+
+  @override
+  Future<List<Conocido>> obtenerConocidos() async => [];
+
+  @override
+  Future<int> guardarConocido({required String nombre, required String apellido, String? mpUserId}) async => 1;
+
+  @override
+  Future<void> asociarTransaccionesConConocido({required String mpUserId, required int conocidoId, required String nombreCompleto}) async {}
 }
 
 void main() {

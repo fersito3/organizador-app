@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 import '../../../../core/enums.dart';
 import '../../domain/models/categoria_domain.dart';
+import '../../domain/models/conocido.dart';
+import '../../domain/repository_interfaces/iexpenses_repository.dart';
 import '../../domain/usecases/add_transaction_usecase.dart';
 import '../../domain/usecases/get_categories_usecase.dart';
 
 class AddTransactionNotifier extends ChangeNotifier {
   final GetCategoriesUseCase _getCategoriesUseCase;
   final AddTransactionUseCase _addTransactionUseCase;
+  final IExpensesRepository _expensesRepository;
 
   List<CategoriaDomain> _allCategories = [];
   List<CategoriaDomain> _filteredCategories = [];
   List<CategoriaDomain> get filteredCategories => _filteredCategories;
+
+  List<Conocido> _conocidos = [];
+  List<Conocido> get conocidos => _conocidos;
+
+  int? _conocidoIdSeleccionado;
+  int? get conocidoIdSeleccionado => _conocidoIdSeleccionado;
 
   bool _isLoadingCategories = true;
   bool get isLoadingCategories => _isLoadingCategories;
@@ -30,8 +39,10 @@ class AddTransactionNotifier extends ChangeNotifier {
   AddTransactionNotifier(
     this._getCategoriesUseCase,
     this._addTransactionUseCase,
+    this._expensesRepository,
   ) {
     loadCategories();
+    loadConocidos();
   }
 
   Future<void> loadCategories() async {
@@ -46,6 +57,18 @@ class AddTransactionNotifier extends ChangeNotifier {
       _isLoadingCategories = false;
       notifyListeners();
     }
+  }
+
+  Future<void> loadConocidos() async {
+    try {
+      _conocidos = await _expensesRepository.obtenerConocidos();
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  void selectConocido(int? id) {
+    _conocidoIdSeleccionado = id;
+    notifyListeners();
   }
 
   void selectTipo(TipoTransaccion tipo) {
@@ -92,13 +115,23 @@ class AddTransactionNotifier extends ChangeNotifier {
     notifyListeners();
 
     try {
+      String? finalDestinatario = destinatarioEmisor;
+      String? finalContraparteMpId;
+      if (_conocidoIdSeleccionado != null) {
+        final seleccionado = _conocidos.firstWhere((c) => c.id == _conocidoIdSeleccionado);
+        finalDestinatario = seleccionado.nombreCompleto;
+        finalContraparteMpId = seleccionado.mpUserId;
+      }
+
       await _addTransactionUseCase.execute(
         descripcion: descripcion,
         monto: monto,
         fecha: _fechaSeleccionada,
         tipo: _tipoSeleccionado,
         categoriaId: _categoriaIdSeleccionada!,
-        destinatarioEmisor: destinatarioEmisor,
+        destinatarioEmisor: finalDestinatario,
+        conocidoId: _conocidoIdSeleccionado,
+        contraparteMpId: finalContraparteMpId,
       );
     } finally {
       _isSaving = false;

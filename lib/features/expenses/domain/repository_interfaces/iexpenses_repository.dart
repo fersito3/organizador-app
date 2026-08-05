@@ -1,6 +1,7 @@
 import '../../../../core/enums.dart';
 import '../models/categoria_domain.dart';
 import '../models/transaccion.dart';
+import '../models/conocido.dart';
 
 abstract class IExpensesRepository {
   Stream<List<Transaccion>> watchTransacciones();
@@ -12,8 +13,15 @@ abstract class IExpensesRepository {
     required TipoTransaccion tipo,
     required int categoriaId,
     String? destinatarioEmisor,
+    int? conocidoId,
+    String? contraparteMpId,
   });
   Future<void> guardarTransaccionesSincronizadas(List<Transaccion> transacciones);
   Future<void> eliminarTransaccion(int id);
   Future<void> actualizarTransaccion(int id, String descripcion, int categoriaId);
+  
+  // Métodos para Conocidos
+  Future<List<Conocido>> obtenerConocidos();
+  Future<int> guardarConocido({required String nombre, required String apellido, String? mpUserId});
+  Future<void> asociarTransaccionesConConocido({required String mpUserId, required int conocidoId, required String nombreCompleto});
 }

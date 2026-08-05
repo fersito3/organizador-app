@@ -8,11 +8,15 @@ import '../../domain/models/transaccion.dart';
 import '../../domain/repository_interfaces/iexpenses_repository.dart';
 import '../../domain/usecases/get_transactions_usecase.dart';
 import '../../domain/usecases/get_categories_usecase.dart';
+import '../../domain/models/conocido.dart';
 
 class ExpensesNotifier extends ChangeNotifier {
   final GetTransactionsUseCase _getTransactionsUseCase;
   final GetCategoriesUseCase _getCategoriesUseCase;
   final IExpensesRepository _expensesRepository;
+
+  List<Conocido> _conocidos = [];
+  List<Conocido> get conocidos => _conocidos;
 
   // URL del backend en Render (se puede cambiar por localhost:3000 para pruebas locales)
   static const String backendUrl = 'https://organizador-app-server.onrender.com';
@@ -48,6 +52,7 @@ class ExpensesNotifier extends ChangeNotifier {
     this._expensesRepository,
   ) {
     _loadCategorias();
+    cargarConocidos();
     _subscribeToTransactions();
     sincronizarMercadoPago();
   }
@@ -216,6 +221,43 @@ class ExpensesNotifier extends ChangeNotifier {
 
   Future<void> actualizarTransaccion(int id, String descripcion, int categoriaId) async {
     await _expensesRepository.actualizarTransaccion(id, descripcion, categoriaId);
+  }
+
+  // --- MÉTODOS DE CONOCIDOS ---
+  Future<void> cargarConocidos() async {
+    try {
+      _conocidos = await _expensesRepository.obtenerConocidos();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error al cargar conocidos: $e');
+    }
+  }
+
+  Future<int> guardarConocido({
+    required String nombre,
+    required String apellido,
+    String? mpUserId,
+  }) async {
+    final id = await _expensesRepository.guardarConocido(
+      nombre: nombre,
+      apellido: apellido,
+      mpUserId: mpUserId,
+    );
+    await cargarConocidos();
+    return id;
+  }
+
+  Future<void> asociarTransaccionesConConocido({
+    required String mpUserId,
+    required int conocidoId,
+    required String nombreCompleto,
+  }) async {
+    await _expensesRepository.asociarTransaccionesConConocido(
+      mpUserId: mpUserId,
+      conocidoId: conocidoId,
+      nombreCompleto: nombreCompleto,
+    );
+    await cargarConocidos();
   }
 
   @override

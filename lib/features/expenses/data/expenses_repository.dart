@@ -3,6 +3,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/enums.dart';
 import '../domain/models/categoria_domain.dart';
 import '../domain/models/transaccion.dart';
+import '../domain/models/conocido.dart';
 import '../domain/repository_interfaces/iexpenses_repository.dart';
 
 class ExpensesRepository implements IExpensesRepository {
@@ -33,6 +34,8 @@ class ExpensesRepository implements IExpensesRepository {
     required TipoTransaccion tipo,
     required int categoriaId,
     String? destinatarioEmisor,
+    int? conocidoId,
+    String? contraparteMpId,
   }) {
     return db.into(db.transacciones).insert(
           TransaccionesCompanion.insert(
@@ -42,6 +45,8 @@ class ExpensesRepository implements IExpensesRepository {
             tipo: tipo,
             categoriaId: categoriaId,
             destinatarioEmisor: Value(destinatarioEmisor),
+            conocidoId: Value(conocidoId),
+            contraparteMpId: Value(contraparteMpId),
           ),
         );
   }
@@ -57,6 +62,8 @@ class ExpensesRepository implements IExpensesRepository {
       destinatarioEmisor: t.destinatarioEmisor,
       mpPaymentId: t.mpPaymentId,
       proveedor: t.proveedor,
+      conocidoId: t.conocidoId,
+      contraparteMpId: t.contraparteMpId,
     );
   }
 
@@ -73,6 +80,9 @@ class ExpensesRepository implements IExpensesRepository {
   Future<void> guardarTransaccionesSincronizadas(List<Transaccion> transaccionesList) async {
     // 1. Obtener categorías existentes para hacer el mapeo inteligente
     final categoriasExistentes = await db.select(db.categorias).get();
+    
+    // 2. Obtener conocidos existentes para traducción de nombres
+    final conocidosExistentes = await db.select(db.conocidos).get();
     
     int? findCategoryIdByName(String name) {
       try {
@@ -93,7 +103,7 @@ class ExpensesRepository implements IExpensesRepository {
     // Fecha límite de corte del lado del cliente: 4 de agosto de 2026 a las 23:35 hs (UTC-3) -> 2026-08-05T02:35:00.000Z
     final cutoffDate = DateTime.parse('2026-08-05T02:35:00Z');
 
-    // 2. Guardar transacciones
+    // 3. Guardar transacciones
     for (final item in transaccionesList) {
       if (item.mpPaymentId == null) continue;
 
@@ -163,6 +173,20 @@ class ExpensesRepository implements IExpensesRepository {
         }
       }
 
+      // Buscar si la contraparte es un conocido guardado para auto-resolver nombre
+      int? conocidoId;
+      String? destinatarioEmisor = item.destinatarioEmisor;
+      
+      if (item.contraparteMpId != null) {
+        try {
+          final matchedConocido = conocidosExistentes.firstWhere(
+            (c) => c.mpUserId == item.contraparteMpId,
+          );
+          conocidoId = matchedConocido.id;
+          destinatarioEmisor = '${matchedConocido.nombre} ${matchedConocido.apellido}'.trim();
+        } catch (_) {}
+      }
+
       if (result.isEmpty) {
         // Insertar en la base de datos SQLite
         await db.into(db.transacciones).insert(
@@ -172,20 +196,26 @@ class ExpensesRepository implements IExpensesRepository {
                 fecha: item.fecha,
                 tipo: item.tipo,
                 categoriaId: catId,
-                destinatarioEmisor: Value(item.destinatarioEmisor),
+                destinatarioEmisor: Value(destinatarioEmisor),
                 mpPaymentId: Value(item.mpPaymentId),
                 proveedor: const Value('MP'),
+                conocidoId: Value(conocidoId),
+                contraparteMpId: Value(item.contraparteMpId),
               ),
             );
       } else {
         // Auto-curación de transacciones guardadas incorrectamente en el historial
         final existing = result.first;
-        if (existing.tipo != item.tipo || existing.destinatarioEmisor != item.destinatarioEmisor) {
+        if (existing.tipo != item.tipo || 
+            existing.destinatarioEmisor != destinatarioEmisor ||
+            existing.conocidoId != conocidoId) {
           await (db.update(db.transacciones)..where((t) => t.id.equals(existing.id)))
             .write(TransaccionesCompanion(
               tipo: Value(item.tipo),
-              destinatarioEmisor: Value(item.destinatarioEmisor),
+              destinatarioEmisor: Value(destinatarioEmisor),
               categoriaId: Value(catId),
+              conocidoId: Value(conocidoId),
+              contraparteMpId: Value(item.contraparteMpId),
             ));
         }
       }
@@ -204,5 +234,54 @@ class ExpensesRepository implements IExpensesRepository {
         descripcion: Value(descripcion),
         categoriaId: Value(categoriaId),
       ));
+  }
+
+  // --- MÉTODOS DE CONOCIDOS ---
+  @override
+  Future<List<Conocido>> obtenerConocidos() async {
+    final list = await db.select(db.conocidos).get();
+    return list.map((c) => Conocido(
+      id: c.id,
+      nombre: c.nombre,
+      apellido: c.apellido,
+      mpUserId: c.mpUserId,
+    )).toList();
+  }
+
+  @override
+  Future<int> guardarConocido({required String nombre, required String apellido, String? mpUserId}) async {
+    if (mpUserId != null && mpUserId.trim().isNotEmpty) {
+      final query = db.select(db.conocidos)..where((c) => c.mpUserId.equals(mpUserId.trim()));
+      final exists = await query.get();
+      if (exists.isNotEmpty) {
+        // Si ya existe uno con ese mpUserId, retornamos su ID existente
+        return exists.first.id;
+      }
+    }
+    return db.into(db.conocidos).insert(
+      ConocidosCompanion.insert(
+        nombre: nombre,
+        apellido: apellido,
+        mpUserId: Value(mpUserId?.trim()),
+      ),
+    );
+  }
+
+  @override
+  Future<void> asociarTransaccionesConConocido({
+    required String mpUserId,
+    required int conocidoId,
+    required String nombreCompleto,
+  }) async {
+    // 1. Actualizar el mpUserId del conocido en caso de vinculación tardía
+    await (db.update(db.conocidos)..where((c) => c.id.equals(conocidoId)))
+        .write(ConocidosCompanion(mpUserId: Value(mpUserId.trim())));
+
+    // 2. Actualizar todas las transacciones que tengan este contraparteMpId en la BDD local
+    await (db.update(db.transacciones)..where((t) => t.contraparteMpId.equals(mpUserId.trim())))
+        .write(TransaccionesCompanion(
+          conocidoId: Value(conocidoId),
+          destinatarioEmisor: Value(nombreCompleto),
+        ));
   }
 }

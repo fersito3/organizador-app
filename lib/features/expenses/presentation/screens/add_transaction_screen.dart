@@ -137,16 +137,45 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // --- CAMPO DESTINATARIO / EMISOR ---
-                  TextFormField(
-                    controller: _destinatarioEmisorController,
+                  // --- SELECTOR DE CONOCIDO ---
+                  DropdownButtonFormField<int?>(
+                    value: notifier.conocidoIdSeleccionado,
                     decoration: const InputDecoration(
-                      labelText: 'Destinatario / Emisor (Opcional)',
-                      prefixIcon: Icon(Icons.person_outline),
+                      labelText: 'Contacto (Conocido)',
+                      prefixIcon: Icon(Icons.people_outline_rounded),
                       border: OutlineInputBorder(),
                     ),
+                    items: [
+                      const DropdownMenuItem<int?>(
+                        value: null,
+                        child: Text('Ninguno (Desconocido / Temporal)'),
+                      ),
+                      ...notifier.conocidos.map((c) {
+                        final descStr = c.mpUserId != null ? '(Mercado Pago)' : '(Sin MP)';
+                        return DropdownMenuItem<int?>(
+                          value: c.id,
+                          child: Text('${c.nombreCompleto} $descStr'),
+                        );
+                      }),
+                    ],
+                    onChanged: (int? value) {
+                      notifier.selectConocido(value);
+                    },
                   ),
                   const SizedBox(height: 16),
+
+                  // --- CAMPO DESTINATARIO / EMISOR (Solo si es desconocido) ---
+                  if (notifier.conocidoIdSeleccionado == null) ...[
+                    TextFormField(
+                      controller: _destinatarioEmisorController,
+                      decoration: const InputDecoration(
+                        labelText: 'Destinatario / Emisor (Opcional)',
+                        prefixIcon: Icon(Icons.person_outline),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
 
                   // --- CAMPO CATEGORÍA (FILTRADO DINÁMICO) ---
                   DropdownButtonFormField<int>(

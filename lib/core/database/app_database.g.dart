@@ -312,6 +312,314 @@ class CategoriasCompanion extends UpdateCompanion<Categoria> {
   }
 }
 
+class $ConocidosTable extends Conocidos
+    with TableInfo<$ConocidosTable, Conocido> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ConocidosTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nombreMeta = const VerificationMeta('nombre');
+  @override
+  late final GeneratedColumn<String> nombre = GeneratedColumn<String>(
+    'nombre',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 100,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _apellidoMeta = const VerificationMeta(
+    'apellido',
+  );
+  @override
+  late final GeneratedColumn<String> apellido = GeneratedColumn<String>(
+    'apellido',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 0,
+      maxTextLength: 100,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _mpUserIdMeta = const VerificationMeta(
+    'mpUserId',
+  );
+  @override
+  late final GeneratedColumn<String> mpUserId = GeneratedColumn<String>(
+    'mp_user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, nombre, apellido, mpUserId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'conocidos';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Conocido> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('nombre')) {
+      context.handle(
+        _nombreMeta,
+        nombre.isAcceptableOrUnknown(data['nombre']!, _nombreMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nombreMeta);
+    }
+    if (data.containsKey('apellido')) {
+      context.handle(
+        _apellidoMeta,
+        apellido.isAcceptableOrUnknown(data['apellido']!, _apellidoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_apellidoMeta);
+    }
+    if (data.containsKey('mp_user_id')) {
+      context.handle(
+        _mpUserIdMeta,
+        mpUserId.isAcceptableOrUnknown(data['mp_user_id']!, _mpUserIdMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Conocido map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Conocido(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      nombre: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nombre'],
+      )!,
+      apellido: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}apellido'],
+      )!,
+      mpUserId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mp_user_id'],
+      ),
+    );
+  }
+
+  @override
+  $ConocidosTable createAlias(String alias) {
+    return $ConocidosTable(attachedDatabase, alias);
+  }
+}
+
+class Conocido extends DataClass implements Insertable<Conocido> {
+  final int id;
+  final String nombre;
+  final String apellido;
+  final String? mpUserId;
+  const Conocido({
+    required this.id,
+    required this.nombre,
+    required this.apellido,
+    this.mpUserId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['nombre'] = Variable<String>(nombre);
+    map['apellido'] = Variable<String>(apellido);
+    if (!nullToAbsent || mpUserId != null) {
+      map['mp_user_id'] = Variable<String>(mpUserId);
+    }
+    return map;
+  }
+
+  ConocidosCompanion toCompanion(bool nullToAbsent) {
+    return ConocidosCompanion(
+      id: Value(id),
+      nombre: Value(nombre),
+      apellido: Value(apellido),
+      mpUserId: mpUserId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mpUserId),
+    );
+  }
+
+  factory Conocido.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Conocido(
+      id: serializer.fromJson<int>(json['id']),
+      nombre: serializer.fromJson<String>(json['nombre']),
+      apellido: serializer.fromJson<String>(json['apellido']),
+      mpUserId: serializer.fromJson<String?>(json['mpUserId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'nombre': serializer.toJson<String>(nombre),
+      'apellido': serializer.toJson<String>(apellido),
+      'mpUserId': serializer.toJson<String?>(mpUserId),
+    };
+  }
+
+  Conocido copyWith({
+    int? id,
+    String? nombre,
+    String? apellido,
+    Value<String?> mpUserId = const Value.absent(),
+  }) => Conocido(
+    id: id ?? this.id,
+    nombre: nombre ?? this.nombre,
+    apellido: apellido ?? this.apellido,
+    mpUserId: mpUserId.present ? mpUserId.value : this.mpUserId,
+  );
+  Conocido copyWithCompanion(ConocidosCompanion data) {
+    return Conocido(
+      id: data.id.present ? data.id.value : this.id,
+      nombre: data.nombre.present ? data.nombre.value : this.nombre,
+      apellido: data.apellido.present ? data.apellido.value : this.apellido,
+      mpUserId: data.mpUserId.present ? data.mpUserId.value : this.mpUserId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Conocido(')
+          ..write('id: $id, ')
+          ..write('nombre: $nombre, ')
+          ..write('apellido: $apellido, ')
+          ..write('mpUserId: $mpUserId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, nombre, apellido, mpUserId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Conocido &&
+          other.id == this.id &&
+          other.nombre == this.nombre &&
+          other.apellido == this.apellido &&
+          other.mpUserId == this.mpUserId);
+}
+
+class ConocidosCompanion extends UpdateCompanion<Conocido> {
+  final Value<int> id;
+  final Value<String> nombre;
+  final Value<String> apellido;
+  final Value<String?> mpUserId;
+  const ConocidosCompanion({
+    this.id = const Value.absent(),
+    this.nombre = const Value.absent(),
+    this.apellido = const Value.absent(),
+    this.mpUserId = const Value.absent(),
+  });
+  ConocidosCompanion.insert({
+    this.id = const Value.absent(),
+    required String nombre,
+    required String apellido,
+    this.mpUserId = const Value.absent(),
+  }) : nombre = Value(nombre),
+       apellido = Value(apellido);
+  static Insertable<Conocido> custom({
+    Expression<int>? id,
+    Expression<String>? nombre,
+    Expression<String>? apellido,
+    Expression<String>? mpUserId,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (nombre != null) 'nombre': nombre,
+      if (apellido != null) 'apellido': apellido,
+      if (mpUserId != null) 'mp_user_id': mpUserId,
+    });
+  }
+
+  ConocidosCompanion copyWith({
+    Value<int>? id,
+    Value<String>? nombre,
+    Value<String>? apellido,
+    Value<String?>? mpUserId,
+  }) {
+    return ConocidosCompanion(
+      id: id ?? this.id,
+      nombre: nombre ?? this.nombre,
+      apellido: apellido ?? this.apellido,
+      mpUserId: mpUserId ?? this.mpUserId,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (nombre.present) {
+      map['nombre'] = Variable<String>(nombre.value);
+    }
+    if (apellido.present) {
+      map['apellido'] = Variable<String>(apellido.value);
+    }
+    if (mpUserId.present) {
+      map['mp_user_id'] = Variable<String>(mpUserId.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConocidosCompanion(')
+          ..write('id: $id, ')
+          ..write('nombre: $nombre, ')
+          ..write('apellido: $apellido, ')
+          ..write('mpUserId: $mpUserId')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $TransaccionesTable extends Transacciones
     with TableInfo<$TransaccionesTable, Transaccione> {
   @override
@@ -425,6 +733,31 @@ class $TransaccionesTable extends Transacciones
     requiredDuringInsert: false,
     defaultValue: const Constant('MANUAL'),
   );
+  static const VerificationMeta _conocidoIdMeta = const VerificationMeta(
+    'conocidoId',
+  );
+  @override
+  late final GeneratedColumn<int> conocidoId = GeneratedColumn<int>(
+    'conocido_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES conocidos (id)',
+    ),
+  );
+  static const VerificationMeta _contraparteMpIdMeta = const VerificationMeta(
+    'contraparteMpId',
+  );
+  @override
+  late final GeneratedColumn<String> contraparteMpId = GeneratedColumn<String>(
+    'contraparte_mp_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -436,6 +769,8 @@ class $TransaccionesTable extends Transacciones
     destinatarioEmisor,
     mpPaymentId,
     proveedor,
+    conocidoId,
+    contraparteMpId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -514,6 +849,21 @@ class $TransaccionesTable extends Transacciones
         proveedor.isAcceptableOrUnknown(data['proveedor']!, _proveedorMeta),
       );
     }
+    if (data.containsKey('conocido_id')) {
+      context.handle(
+        _conocidoIdMeta,
+        conocidoId.isAcceptableOrUnknown(data['conocido_id']!, _conocidoIdMeta),
+      );
+    }
+    if (data.containsKey('contraparte_mp_id')) {
+      context.handle(
+        _contraparteMpIdMeta,
+        contraparteMpId.isAcceptableOrUnknown(
+          data['contraparte_mp_id']!,
+          _contraparteMpIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -561,6 +911,14 @@ class $TransaccionesTable extends Transacciones
         DriftSqlType.string,
         data['${effectivePrefix}proveedor'],
       )!,
+      conocidoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}conocido_id'],
+      ),
+      contraparteMpId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}contraparte_mp_id'],
+      ),
     );
   }
 
@@ -583,6 +941,8 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
   final String? destinatarioEmisor;
   final String? mpPaymentId;
   final String proveedor;
+  final int? conocidoId;
+  final String? contraparteMpId;
   const Transaccione({
     required this.id,
     required this.descripcion,
@@ -593,6 +953,8 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
     this.destinatarioEmisor,
     this.mpPaymentId,
     required this.proveedor,
+    this.conocidoId,
+    this.contraparteMpId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -614,6 +976,12 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
       map['mp_payment_id'] = Variable<String>(mpPaymentId);
     }
     map['proveedor'] = Variable<String>(proveedor);
+    if (!nullToAbsent || conocidoId != null) {
+      map['conocido_id'] = Variable<int>(conocidoId);
+    }
+    if (!nullToAbsent || contraparteMpId != null) {
+      map['contraparte_mp_id'] = Variable<String>(contraparteMpId);
+    }
     return map;
   }
 
@@ -632,6 +1000,12 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
           ? const Value.absent()
           : Value(mpPaymentId),
       proveedor: Value(proveedor),
+      conocidoId: conocidoId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(conocidoId),
+      contraparteMpId: contraparteMpId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contraparteMpId),
     );
   }
 
@@ -654,6 +1028,8 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
       ),
       mpPaymentId: serializer.fromJson<String?>(json['mpPaymentId']),
       proveedor: serializer.fromJson<String>(json['proveedor']),
+      conocidoId: serializer.fromJson<int?>(json['conocidoId']),
+      contraparteMpId: serializer.fromJson<String?>(json['contraparteMpId']),
     );
   }
   @override
@@ -671,6 +1047,8 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
       'destinatarioEmisor': serializer.toJson<String?>(destinatarioEmisor),
       'mpPaymentId': serializer.toJson<String?>(mpPaymentId),
       'proveedor': serializer.toJson<String>(proveedor),
+      'conocidoId': serializer.toJson<int?>(conocidoId),
+      'contraparteMpId': serializer.toJson<String?>(contraparteMpId),
     };
   }
 
@@ -684,6 +1062,8 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
     Value<String?> destinatarioEmisor = const Value.absent(),
     Value<String?> mpPaymentId = const Value.absent(),
     String? proveedor,
+    Value<int?> conocidoId = const Value.absent(),
+    Value<String?> contraparteMpId = const Value.absent(),
   }) => Transaccione(
     id: id ?? this.id,
     descripcion: descripcion ?? this.descripcion,
@@ -696,6 +1076,10 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
         : this.destinatarioEmisor,
     mpPaymentId: mpPaymentId.present ? mpPaymentId.value : this.mpPaymentId,
     proveedor: proveedor ?? this.proveedor,
+    conocidoId: conocidoId.present ? conocidoId.value : this.conocidoId,
+    contraparteMpId: contraparteMpId.present
+        ? contraparteMpId.value
+        : this.contraparteMpId,
   );
   Transaccione copyWithCompanion(TransaccionesCompanion data) {
     return Transaccione(
@@ -716,6 +1100,12 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
           ? data.mpPaymentId.value
           : this.mpPaymentId,
       proveedor: data.proveedor.present ? data.proveedor.value : this.proveedor,
+      conocidoId: data.conocidoId.present
+          ? data.conocidoId.value
+          : this.conocidoId,
+      contraparteMpId: data.contraparteMpId.present
+          ? data.contraparteMpId.value
+          : this.contraparteMpId,
     );
   }
 
@@ -730,7 +1120,9 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
           ..write('categoriaId: $categoriaId, ')
           ..write('destinatarioEmisor: $destinatarioEmisor, ')
           ..write('mpPaymentId: $mpPaymentId, ')
-          ..write('proveedor: $proveedor')
+          ..write('proveedor: $proveedor, ')
+          ..write('conocidoId: $conocidoId, ')
+          ..write('contraparteMpId: $contraparteMpId')
           ..write(')'))
         .toString();
   }
@@ -746,6 +1138,8 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
     destinatarioEmisor,
     mpPaymentId,
     proveedor,
+    conocidoId,
+    contraparteMpId,
   );
   @override
   bool operator ==(Object other) =>
@@ -759,7 +1153,9 @@ class Transaccione extends DataClass implements Insertable<Transaccione> {
           other.categoriaId == this.categoriaId &&
           other.destinatarioEmisor == this.destinatarioEmisor &&
           other.mpPaymentId == this.mpPaymentId &&
-          other.proveedor == this.proveedor);
+          other.proveedor == this.proveedor &&
+          other.conocidoId == this.conocidoId &&
+          other.contraparteMpId == this.contraparteMpId);
 }
 
 class TransaccionesCompanion extends UpdateCompanion<Transaccione> {
@@ -772,6 +1168,8 @@ class TransaccionesCompanion extends UpdateCompanion<Transaccione> {
   final Value<String?> destinatarioEmisor;
   final Value<String?> mpPaymentId;
   final Value<String> proveedor;
+  final Value<int?> conocidoId;
+  final Value<String?> contraparteMpId;
   const TransaccionesCompanion({
     this.id = const Value.absent(),
     this.descripcion = const Value.absent(),
@@ -782,6 +1180,8 @@ class TransaccionesCompanion extends UpdateCompanion<Transaccione> {
     this.destinatarioEmisor = const Value.absent(),
     this.mpPaymentId = const Value.absent(),
     this.proveedor = const Value.absent(),
+    this.conocidoId = const Value.absent(),
+    this.contraparteMpId = const Value.absent(),
   });
   TransaccionesCompanion.insert({
     this.id = const Value.absent(),
@@ -793,6 +1193,8 @@ class TransaccionesCompanion extends UpdateCompanion<Transaccione> {
     this.destinatarioEmisor = const Value.absent(),
     this.mpPaymentId = const Value.absent(),
     this.proveedor = const Value.absent(),
+    this.conocidoId = const Value.absent(),
+    this.contraparteMpId = const Value.absent(),
   }) : descripcion = Value(descripcion),
        monto = Value(monto),
        fecha = Value(fecha),
@@ -808,6 +1210,8 @@ class TransaccionesCompanion extends UpdateCompanion<Transaccione> {
     Expression<String>? destinatarioEmisor,
     Expression<String>? mpPaymentId,
     Expression<String>? proveedor,
+    Expression<int>? conocidoId,
+    Expression<String>? contraparteMpId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -819,6 +1223,8 @@ class TransaccionesCompanion extends UpdateCompanion<Transaccione> {
       if (destinatarioEmisor != null) 'destinatario_emisor': destinatarioEmisor,
       if (mpPaymentId != null) 'mp_payment_id': mpPaymentId,
       if (proveedor != null) 'proveedor': proveedor,
+      if (conocidoId != null) 'conocido_id': conocidoId,
+      if (contraparteMpId != null) 'contraparte_mp_id': contraparteMpId,
     });
   }
 
@@ -832,6 +1238,8 @@ class TransaccionesCompanion extends UpdateCompanion<Transaccione> {
     Value<String?>? destinatarioEmisor,
     Value<String?>? mpPaymentId,
     Value<String>? proveedor,
+    Value<int?>? conocidoId,
+    Value<String?>? contraparteMpId,
   }) {
     return TransaccionesCompanion(
       id: id ?? this.id,
@@ -843,6 +1251,8 @@ class TransaccionesCompanion extends UpdateCompanion<Transaccione> {
       destinatarioEmisor: destinatarioEmisor ?? this.destinatarioEmisor,
       mpPaymentId: mpPaymentId ?? this.mpPaymentId,
       proveedor: proveedor ?? this.proveedor,
+      conocidoId: conocidoId ?? this.conocidoId,
+      contraparteMpId: contraparteMpId ?? this.contraparteMpId,
     );
   }
 
@@ -878,6 +1288,12 @@ class TransaccionesCompanion extends UpdateCompanion<Transaccione> {
     if (proveedor.present) {
       map['proveedor'] = Variable<String>(proveedor.value);
     }
+    if (conocidoId.present) {
+      map['conocido_id'] = Variable<int>(conocidoId.value);
+    }
+    if (contraparteMpId.present) {
+      map['contraparte_mp_id'] = Variable<String>(contraparteMpId.value);
+    }
     return map;
   }
 
@@ -892,7 +1308,9 @@ class TransaccionesCompanion extends UpdateCompanion<Transaccione> {
           ..write('categoriaId: $categoriaId, ')
           ..write('destinatarioEmisor: $destinatarioEmisor, ')
           ..write('mpPaymentId: $mpPaymentId, ')
-          ..write('proveedor: $proveedor')
+          ..write('proveedor: $proveedor, ')
+          ..write('conocidoId: $conocidoId, ')
+          ..write('contraparteMpId: $contraparteMpId')
           ..write(')'))
         .toString();
   }
@@ -1904,6 +2322,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $CategoriasTable categorias = $CategoriasTable(this);
+  late final $ConocidosTable conocidos = $ConocidosTable(this);
   late final $TransaccionesTable transacciones = $TransaccionesTable(this);
   late final $EventosTable eventos = $EventosTable(this);
   late final $TareasTable tareas = $TareasTable(this);
@@ -1913,6 +2332,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     categorias,
+    conocidos,
     transacciones,
     eventos,
     tareas,
@@ -2200,6 +2620,284 @@ typedef $$CategoriasTableProcessedTableManager =
       Categoria,
       PrefetchHooks Function({bool transaccionesRefs})
     >;
+typedef $$ConocidosTableCreateCompanionBuilder =
+    ConocidosCompanion Function({
+      Value<int> id,
+      required String nombre,
+      required String apellido,
+      Value<String?> mpUserId,
+    });
+typedef $$ConocidosTableUpdateCompanionBuilder =
+    ConocidosCompanion Function({
+      Value<int> id,
+      Value<String> nombre,
+      Value<String> apellido,
+      Value<String?> mpUserId,
+    });
+
+final class $$ConocidosTableReferences
+    extends BaseReferences<_$AppDatabase, $ConocidosTable, Conocido> {
+  $$ConocidosTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$TransaccionesTable, List<Transaccione>>
+  _transaccionesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.transacciones,
+    aliasName: 'conocidos__id__transacciones__conocido_id',
+  );
+
+  $$TransaccionesTableProcessedTableManager get transaccionesRefs {
+    final manager = $$TransaccionesTableTableManager(
+      $_db,
+      $_db.transacciones,
+    ).filter((f) => f.conocidoId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_transaccionesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ConocidosTableFilterComposer
+    extends Composer<_$AppDatabase, $ConocidosTable> {
+  $$ConocidosTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nombre => $composableBuilder(
+    column: $table.nombre,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get apellido => $composableBuilder(
+    column: $table.apellido,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mpUserId => $composableBuilder(
+    column: $table.mpUserId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> transaccionesRefs(
+    Expression<bool> Function($$TransaccionesTableFilterComposer f) f,
+  ) {
+    final $$TransaccionesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.transacciones,
+      getReferencedColumn: (t) => t.conocidoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransaccionesTableFilterComposer(
+            $db: $db,
+            $table: $db.transacciones,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ConocidosTableOrderingComposer
+    extends Composer<_$AppDatabase, $ConocidosTable> {
+  $$ConocidosTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nombre => $composableBuilder(
+    column: $table.nombre,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get apellido => $composableBuilder(
+    column: $table.apellido,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mpUserId => $composableBuilder(
+    column: $table.mpUserId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ConocidosTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ConocidosTable> {
+  $$ConocidosTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get nombre =>
+      $composableBuilder(column: $table.nombre, builder: (column) => column);
+
+  GeneratedColumn<String> get apellido =>
+      $composableBuilder(column: $table.apellido, builder: (column) => column);
+
+  GeneratedColumn<String> get mpUserId =>
+      $composableBuilder(column: $table.mpUserId, builder: (column) => column);
+
+  Expression<T> transaccionesRefs<T extends Object>(
+    Expression<T> Function($$TransaccionesTableAnnotationComposer a) f,
+  ) {
+    final $$TransaccionesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.transacciones,
+      getReferencedColumn: (t) => t.conocidoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransaccionesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.transacciones,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ConocidosTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ConocidosTable,
+          Conocido,
+          $$ConocidosTableFilterComposer,
+          $$ConocidosTableOrderingComposer,
+          $$ConocidosTableAnnotationComposer,
+          $$ConocidosTableCreateCompanionBuilder,
+          $$ConocidosTableUpdateCompanionBuilder,
+          (Conocido, $$ConocidosTableReferences),
+          Conocido,
+          PrefetchHooks Function({bool transaccionesRefs})
+        > {
+  $$ConocidosTableTableManager(_$AppDatabase db, $ConocidosTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ConocidosTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ConocidosTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ConocidosTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> nombre = const Value.absent(),
+                Value<String> apellido = const Value.absent(),
+                Value<String?> mpUserId = const Value.absent(),
+              }) => ConocidosCompanion(
+                id: id,
+                nombre: nombre,
+                apellido: apellido,
+                mpUserId: mpUserId,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String nombre,
+                required String apellido,
+                Value<String?> mpUserId = const Value.absent(),
+              }) => ConocidosCompanion.insert(
+                id: id,
+                nombre: nombre,
+                apellido: apellido,
+                mpUserId: mpUserId,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ConocidosTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({transaccionesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (transaccionesRefs) db.transacciones,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (transaccionesRefs)
+                    await $_getPrefetchedData<
+                      Conocido,
+                      $ConocidosTable,
+                      Transaccione
+                    >(
+                      currentTable: table,
+                      referencedTable: $$ConocidosTableReferences
+                          ._transaccionesRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$ConocidosTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).transaccionesRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.conocidoId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ConocidosTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ConocidosTable,
+      Conocido,
+      $$ConocidosTableFilterComposer,
+      $$ConocidosTableOrderingComposer,
+      $$ConocidosTableAnnotationComposer,
+      $$ConocidosTableCreateCompanionBuilder,
+      $$ConocidosTableUpdateCompanionBuilder,
+      (Conocido, $$ConocidosTableReferences),
+      Conocido,
+      PrefetchHooks Function({bool transaccionesRefs})
+    >;
 typedef $$TransaccionesTableCreateCompanionBuilder =
     TransaccionesCompanion Function({
       Value<int> id,
@@ -2211,6 +2909,8 @@ typedef $$TransaccionesTableCreateCompanionBuilder =
       Value<String?> destinatarioEmisor,
       Value<String?> mpPaymentId,
       Value<String> proveedor,
+      Value<int?> conocidoId,
+      Value<String?> contraparteMpId,
     });
 typedef $$TransaccionesTableUpdateCompanionBuilder =
     TransaccionesCompanion Function({
@@ -2223,6 +2923,8 @@ typedef $$TransaccionesTableUpdateCompanionBuilder =
       Value<String?> destinatarioEmisor,
       Value<String?> mpPaymentId,
       Value<String> proveedor,
+      Value<int?> conocidoId,
+      Value<String?> contraparteMpId,
     });
 
 final class $$TransaccionesTableReferences
@@ -2244,6 +2946,23 @@ final class $$TransaccionesTableReferences
       $_db.categorias,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_categoriaIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ConocidosTable _conocidoIdTable(_$AppDatabase db) =>
+      db.conocidos.createAlias('transacciones__conocido_id__conocidos__id');
+
+  $$ConocidosTableProcessedTableManager? get conocidoId {
+    final $_column = $_itemColumn<int>('conocido_id');
+    if ($_column == null) return null;
+    final manager = $$ConocidosTableTableManager(
+      $_db,
+      $_db.conocidos,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_conocidoIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -2320,6 +3039,11 @@ class $$TransaccionesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get contraparteMpId => $composableBuilder(
+    column: $table.contraparteMpId,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$CategoriasTableFilterComposer get categoriaId {
     final $$CategoriasTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -2334,6 +3058,29 @@ class $$TransaccionesTableFilterComposer
           }) => $$CategoriasTableFilterComposer(
             $db: $db,
             $table: $db.categorias,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConocidosTableFilterComposer get conocidoId {
+    final $$ConocidosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conocidoId,
+      referencedTable: $db.conocidos,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConocidosTableFilterComposer(
+            $db: $db,
+            $table: $db.conocidos,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2418,6 +3165,11 @@ class $$TransaccionesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get contraparteMpId => $composableBuilder(
+    column: $table.contraparteMpId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$CategoriasTableOrderingComposer get categoriaId {
     final $$CategoriasTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -2432,6 +3184,29 @@ class $$TransaccionesTableOrderingComposer
           }) => $$CategoriasTableOrderingComposer(
             $db: $db,
             $table: $db.categorias,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConocidosTableOrderingComposer get conocidoId {
+    final $$ConocidosTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conocidoId,
+      referencedTable: $db.conocidos,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConocidosTableOrderingComposer(
+            $db: $db,
+            $table: $db.conocidos,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2481,6 +3256,11 @@ class $$TransaccionesTableAnnotationComposer
   GeneratedColumn<String> get proveedor =>
       $composableBuilder(column: $table.proveedor, builder: (column) => column);
 
+  GeneratedColumn<String> get contraparteMpId => $composableBuilder(
+    column: $table.contraparteMpId,
+    builder: (column) => column,
+  );
+
   $$CategoriasTableAnnotationComposer get categoriaId {
     final $$CategoriasTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -2495,6 +3275,29 @@ class $$TransaccionesTableAnnotationComposer
           }) => $$CategoriasTableAnnotationComposer(
             $db: $db,
             $table: $db.categorias,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConocidosTableAnnotationComposer get conocidoId {
+    final $$ConocidosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conocidoId,
+      referencedTable: $db.conocidos,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConocidosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.conocidos,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2543,7 +3346,11 @@ class $$TransaccionesTableTableManager
           $$TransaccionesTableUpdateCompanionBuilder,
           (Transaccione, $$TransaccionesTableReferences),
           Transaccione,
-          PrefetchHooks Function({bool categoriaId, bool eventosRefs})
+          PrefetchHooks Function({
+            bool categoriaId,
+            bool conocidoId,
+            bool eventosRefs,
+          })
         > {
   $$TransaccionesTableTableManager(_$AppDatabase db, $TransaccionesTable table)
     : super(
@@ -2567,6 +3374,8 @@ class $$TransaccionesTableTableManager
                 Value<String?> destinatarioEmisor = const Value.absent(),
                 Value<String?> mpPaymentId = const Value.absent(),
                 Value<String> proveedor = const Value.absent(),
+                Value<int?> conocidoId = const Value.absent(),
+                Value<String?> contraparteMpId = const Value.absent(),
               }) => TransaccionesCompanion(
                 id: id,
                 descripcion: descripcion,
@@ -2577,6 +3386,8 @@ class $$TransaccionesTableTableManager
                 destinatarioEmisor: destinatarioEmisor,
                 mpPaymentId: mpPaymentId,
                 proveedor: proveedor,
+                conocidoId: conocidoId,
+                contraparteMpId: contraparteMpId,
               ),
           createCompanionCallback:
               ({
@@ -2589,6 +3400,8 @@ class $$TransaccionesTableTableManager
                 Value<String?> destinatarioEmisor = const Value.absent(),
                 Value<String?> mpPaymentId = const Value.absent(),
                 Value<String> proveedor = const Value.absent(),
+                Value<int?> conocidoId = const Value.absent(),
+                Value<String?> contraparteMpId = const Value.absent(),
               }) => TransaccionesCompanion.insert(
                 id: id,
                 descripcion: descripcion,
@@ -2599,6 +3412,8 @@ class $$TransaccionesTableTableManager
                 destinatarioEmisor: destinatarioEmisor,
                 mpPaymentId: mpPaymentId,
                 proveedor: proveedor,
+                conocidoId: conocidoId,
+                contraparteMpId: contraparteMpId,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -2608,69 +3423,87 @@ class $$TransaccionesTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({categoriaId = false, eventosRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (eventosRefs) db.eventos],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (categoriaId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.categoriaId,
-                                referencedTable: $$TransaccionesTableReferences
-                                    ._categoriaIdTable(db),
-                                referencedColumn: $$TransaccionesTableReferences
-                                    ._categoriaIdTable(db)
-                                    .id,
-                              )
-                              as T;
-                    }
+          prefetchHooksCallback:
+              ({categoriaId = false, conocidoId = false, eventosRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [if (eventosRefs) db.eventos],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (categoriaId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.categoriaId,
+                                    referencedTable:
+                                        $$TransaccionesTableReferences
+                                            ._categoriaIdTable(db),
+                                    referencedColumn:
+                                        $$TransaccionesTableReferences
+                                            ._categoriaIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (conocidoId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.conocidoId,
+                                    referencedTable:
+                                        $$TransaccionesTableReferences
+                                            ._conocidoIdTable(db),
+                                    referencedColumn:
+                                        $$TransaccionesTableReferences
+                                            ._conocidoIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (eventosRefs)
+                        await $_getPrefetchedData<
+                          Transaccione,
+                          $TransaccionesTable,
+                          Evento
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TransaccionesTableReferences
+                              ._eventosRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TransaccionesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).eventosRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.transaccionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (eventosRefs)
-                    await $_getPrefetchedData<
-                      Transaccione,
-                      $TransaccionesTable,
-                      Evento
-                    >(
-                      currentTable: table,
-                      referencedTable: $$TransaccionesTableReferences
-                          ._eventosRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$TransaccionesTableReferences(
-                            db,
-                            table,
-                            p0,
-                          ).eventosRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where(
-                            (e) => e.transaccionId == item.id,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -2687,7 +3520,11 @@ typedef $$TransaccionesTableProcessedTableManager =
       $$TransaccionesTableUpdateCompanionBuilder,
       (Transaccione, $$TransaccionesTableReferences),
       Transaccione,
-      PrefetchHooks Function({bool categoriaId, bool eventosRefs})
+      PrefetchHooks Function({
+        bool categoriaId,
+        bool conocidoId,
+        bool eventosRefs,
+      })
     >;
 typedef $$EventosTableCreateCompanionBuilder =
     EventosCompanion Function({
@@ -3505,6 +4342,8 @@ class $AppDatabaseManager {
   $AppDatabaseManager(this._db);
   $$CategoriasTableTableManager get categorias =>
       $$CategoriasTableTableManager(_db, _db.categorias);
+  $$ConocidosTableTableManager get conocidos =>
+      $$ConocidosTableTableManager(_db, _db.conocidos);
   $$TransaccionesTableTableManager get transacciones =>
       $$TransaccionesTableTableManager(_db, _db.transacciones);
   $$EventosTableTableManager get eventos =>

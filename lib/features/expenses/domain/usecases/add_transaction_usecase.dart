@@ -13,6 +13,8 @@ class AddTransactionUseCase {
     required TipoTransaccion tipo,
     required int categoriaId,
     String? destinatarioEmisor,
+    int? conocidoId,
+    String? contraparteMpId,
   }) async {
     if (monto <= 0) {
       throw Exception('El monto de la transacción debe ser mayor a 0.');
@@ -28,6 +30,8 @@ class AddTransactionUseCase {
       tipo: tipo,
       categoriaId: categoriaId,
       destinatarioEmisor: destinatarioEmisor?.trim().isEmpty == true ? null : destinatarioEmisor?.trim(),
+      conocidoId: conocidoId,
+      contraparteMpId: contraparteMpId,
     );
   }
 }
