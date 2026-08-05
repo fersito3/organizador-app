@@ -140,6 +140,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   // --- SELECTOR DE CONOCIDO ---
                   DropdownButtonFormField<int?>(
                     value: notifier.conocidoIdSeleccionado,
+                    isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'Contacto (Conocido)',
                       prefixIcon: Icon(Icons.people_outline_rounded),
@@ -148,13 +149,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     items: [
                       const DropdownMenuItem<int?>(
                         value: null,
-                        child: Text('Ninguno (Desconocido / Temporal)'),
+                        child: Text(
+                          'Ninguno (Desconocido / Temporal)',
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       ...notifier.conocidos.map((c) {
                         final descStr = c.mpUserId != null ? '(Mercado Pago)' : '(Sin MP)';
                         return DropdownMenuItem<int?>(
                           value: c.id,
-                          child: Text('${c.nombreCompleto} $descStr'),
+                          child: Text(
+                            '${c.nombreCompleto} $descStr',
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         );
                       }),
                     ],
@@ -180,6 +187,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   // --- CAMPO CATEGORÍA (FILTRADO DINÁMICO) ---
                   DropdownButtonFormField<int>(
                     value: notifier.categoriaIdSeleccionada,
+                    isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'Categoría',
                       prefixIcon: Icon(Icons.category),
@@ -204,7 +212,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text(cat.nombre),
+                            Expanded(
+                              child: Text(
+                                cat.nombre,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
                         ),
                       );

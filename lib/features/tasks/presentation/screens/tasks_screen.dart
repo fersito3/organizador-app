@@ -45,7 +45,8 @@ class _TasksScreenState extends State<TasksScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Column(
+      body: SafeArea(
+        child: Column(
         children: [
           // 1. SEARCH BAR
           Container(
@@ -151,11 +152,15 @@ class _TasksScreenState extends State<TasksScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF0F172A),
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.add_rounded, size: 28),
-        onPressed: () => _mostrarAddTaskBottomSheet(context, tasksNotifier, expensesNotifier),
+      ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 16.0),
+        child: FloatingActionButton(
+          backgroundColor: const Color(0xFF0F172A),
+          foregroundColor: Colors.white,
+          child: const Icon(Icons.add_rounded, size: 28),
+          onPressed: () => _mostrarAddTaskBottomSheet(context, tasksNotifier, expensesNotifier),
+        ),
       ),
     );
   }
@@ -415,7 +420,9 @@ class _AddTaskModalState extends State<_AddTaskModal> {
           topRight: Radius.circular(28),
         ),
       ),
-      child: SingleChildScrollView(
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
           child: Form(
@@ -444,18 +451,19 @@ class _AddTaskModalState extends State<_AddTaskModal> {
                 // --- DROP DOWN TIPO ---
                 DropdownButtonFormField<TipoTarea>(
                   value: _tipoSeleccionado,
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Tipo de Tarea',
                     prefixIcon: Icon(Icons.category_rounded),
                     border: OutlineInputBorder(),
                   ),
                   items: const [
-                    DropdownMenuItem(value: TipoTarea.parcial, child: Text('Parcial')),
-                    DropdownMenuItem(value: TipoTarea.entrega, child: Text('Entrega')),
-                    DropdownMenuItem(value: TipoTarea.TP, child: Text('Trabajo Práctico (TP)')),
-                    DropdownMenuItem(value: TipoTarea.estudio, child: Text('Sesión de Estudio')),
-                    DropdownMenuItem(value: TipoTarea.deudas, child: Text('Deuda 💵')),
-                    DropdownMenuItem(value: TipoTarea.otro, child: Text('Otro / Notas')),
+                    DropdownMenuItem(value: TipoTarea.parcial, child: Text('Parcial', overflow: TextOverflow.ellipsis)),
+                    DropdownMenuItem(value: TipoTarea.entrega, child: Text('Entrega', overflow: TextOverflow.ellipsis)),
+                    DropdownMenuItem(value: TipoTarea.TP, child: Text('Trabajo Práctico (TP)', overflow: TextOverflow.ellipsis)),
+                    DropdownMenuItem(value: TipoTarea.estudio, child: Text('Sesión de Estudio', overflow: TextOverflow.ellipsis)),
+                    DropdownMenuItem(value: TipoTarea.deudas, child: Text('Deuda 💵', overflow: TextOverflow.ellipsis)),
+                    DropdownMenuItem(value: TipoTarea.otro, child: Text('Otro / Notas', overflow: TextOverflow.ellipsis)),
                   ],
                   onChanged: (val) {
                     if (val != null) {
@@ -505,6 +513,7 @@ class _AddTaskModalState extends State<_AddTaskModal> {
                   // 2. Selector de Conocidos + Entrada Manual
                   DropdownButtonFormField<int?>(
                     value: _selectedConocidoId,
+                    isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'A quién le debes (Conocido)',
                       prefixIcon: Icon(Icons.person_rounded),
@@ -513,12 +522,12 @@ class _AddTaskModalState extends State<_AddTaskModal> {
                     items: [
                       const DropdownMenuItem<int?>(
                         value: null,
-                        child: Text('Otro (Escribir nombre abajo)'),
+                        child: Text('Otro (Escribir nombre abajo)', overflow: TextOverflow.ellipsis),
                       ),
                       ...widget.expNotifier.conocidos.map((c) {
                         return DropdownMenuItem<int?>(
                           value: c.id,
-                          child: Text(c.nombreCompleto),
+                          child: Text(c.nombreCompleto, overflow: TextOverflow.ellipsis),
                         );
                       }),
                     ],
@@ -651,6 +660,7 @@ class _AddTaskModalState extends State<_AddTaskModal> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

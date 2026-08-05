@@ -191,6 +191,7 @@ class ExpensesRepository implements IExpensesRepository {
       }
       }
     }
+    await autocompletarIdsConocidos();
   }
 
   @override
@@ -200,6 +201,33 @@ class ExpensesRepository implements IExpensesRepository {
 
   @override
   Future<void> actualizarTransaccion(int id, String descripcion, int categoriaId, {int? conocidoId}) async {
+    // 1. Obtener la transacción actual para ver si tiene contraparteMpId
+    final query = db.select(db.transacciones)..where((t) => t.id.equals(id));
+    final list = await query.get();
+    if (list.isNotEmpty) {
+      final tx = list.first;
+      
+      // 2. Si se seleccionó un conocido y la transacción tiene contraparteMpId
+      if (conocidoId != null && tx.contraparteMpId != null) {
+        final conQuery = db.select(db.conocidos)..where((c) => c.id.equals(conocidoId));
+        final conList = await conQuery.get();
+        if (conList.isNotEmpty) {
+          final conocido = conList.first;
+          
+          // Si el conocido no tiene mpUserId cargado, se lo asignamos
+          if (conocido.mpUserId == null || conocido.mpUserId!.trim().isEmpty) {
+            await (db.update(db.conocidos)..where((c) => c.id.equals(conocidoId)))
+                .write(ConocidosCompanion(mpUserId: Value(tx.contraparteMpId!.trim())));
+          }
+          
+          // Propagar el conocidoId a todas las transacciones que tengan esta contraparte
+          await (db.update(db.transacciones)..where((t) => t.contraparteMpId.equals(tx.contraparteMpId!.trim())))
+              .write(TransaccionesCompanion(conocidoId: Value(conocidoId)));
+        }
+      }
+    }
+
+    // 3. Actualizar la transacción editada
     await (db.update(db.transacciones)..where((t) => t.id.equals(id)))
       .write(TransaccionesCompanion(
         descripcion: Value(descripcion),
@@ -234,8 +262,33 @@ class ExpensesRepository implements IExpensesRepository {
   }
 
   // --- MÉTODOS DE CONOCIDOS ---
+  Future<void> autocompletarIdsConocidos() async {
+    final conocidosList = await db.select(db.conocidos).get();
+    for (final conocido in conocidosList) {
+      if (conocido.mpUserId == null || conocido.mpUserId!.trim().isEmpty) {
+        final query = db.select(db.transacciones)
+          ..where((t) => t.conocidoId.equals(conocido.id) & t.contraparteMpId.isNotNull())
+          ..limit(1);
+        final txList = await query.get();
+        if (txList.isNotEmpty) {
+          final tx = txList.first;
+          if (tx.contraparteMpId != null && tx.contraparteMpId!.trim().isNotEmpty) {
+            final mpIdVal = tx.contraparteMpId!.trim();
+            // Actualizar mpUserId del conocido
+            await (db.update(db.conocidos)..where((c) => c.id.equals(conocido.id)))
+                .write(ConocidosCompanion(mpUserId: Value(mpIdVal)));
+            // Propagar conocidoId a todas las transacciones con este ID
+            await (db.update(db.transacciones)..where((t) => t.contraparteMpId.equals(mpIdVal)))
+                .write(TransaccionesCompanion(conocidoId: Value(conocido.id)));
+          }
+        }
+      }
+    }
+  }
+
   @override
   Future<List<Conocido>> obtenerConocidos() async {
+    await autocompletarIdsConocidos();
     final list = await db.select(db.conocidos).get();
     return list.map((c) => Conocido(
       id: c.id,

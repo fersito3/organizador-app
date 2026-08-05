@@ -135,6 +135,7 @@ class ExpensesNotifier extends ChangeNotifier {
               destinatarioEmisor: tx['destinatarioEmisor'],
               mpPaymentId: tx['mpPaymentId'],
               proveedor: 'MP',
+              contraparteMpId: tx['contraparteMpId']?.toString(),
             );
           }).toList();
 

@@ -80,34 +80,35 @@ class _CalendarScreenState extends State<CalendarScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Column(
-        children: [
-          // 1. MONTH SELECTOR HEADER
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.chevron_left_rounded, size: 28),
-                  onPressed: () {
-                    calendarNotifier.changeMonth(
-                      DateTime(focusedMonth.year, focusedMonth.month - 1),
-                    );
-                  },
-                ),
-                Text(
-                  '${_meses[focusedMonth.month - 1]} ${focusedMonth.year}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // 1. MONTH SELECTOR HEADER
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left_rounded, size: 28),
+                    onPressed: () {
+                      calendarNotifier.changeMonth(
+                        DateTime(focusedMonth.year, focusedMonth.month - 1),
+                      );
+                    },
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right_rounded, size: 28),
-                  onPressed: () {
+                  Text(
+                    '${_meses[focusedMonth.month - 1]} ${focusedMonth.year}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right_rounded, size: 28),
+                    onPressed: () {
                     calendarNotifier.changeMonth(
                       DateTime(focusedMonth.year, focusedMonth.month + 1),
                     );
@@ -302,11 +303,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF8B5CF6),
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.add_rounded, size: 28),
-        onPressed: () => _mostrarAddEventBottomSheet(context, selectedDate, calendarNotifier, expensesNotifier),
+      ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 16.0),
+        child: FloatingActionButton(
+          backgroundColor: const Color(0xFF8B5CF6),
+          foregroundColor: Colors.white,
+          child: const Icon(Icons.add_rounded, size: 28),
+          onPressed: () => _mostrarAddEventBottomSheet(context, selectedDate, calendarNotifier, expensesNotifier),
+        ),
       ),
     );
   }
@@ -591,7 +596,9 @@ class _AddEventModalState extends State<_AddEventModal> {
           topRight: Radius.circular(28),
         ),
       ),
-      child: SingleChildScrollView(
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
           child: Form(
@@ -686,6 +693,7 @@ class _AddEventModalState extends State<_AddEventModal> {
                 // Transaction Linker dropdown
                 DropdownButtonFormField<int?>(
                   value: _selectedTransaccionId,
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Vincular Gasto / Transacción (Opcional)',
                     prefixIcon: Icon(Icons.attach_money_rounded),
@@ -694,7 +702,7 @@ class _AddEventModalState extends State<_AddEventModal> {
                   items: [
                     const DropdownMenuItem<int?>(
                       value: null,
-                      child: Text('Ninguna transacción'),
+                      child: Text('Ninguna transacción', overflow: TextOverflow.ellipsis),
                     ),
                     ...widget.expNotifier.transacciones.take(15).map((t) {
                       return DropdownMenuItem<int?>(
@@ -705,7 +713,7 @@ class _AddEventModalState extends State<_AddEventModal> {
                           style: const TextStyle(fontSize: 12),
                         ),
                       );
-                    }),
+                    }).toList(),
                   ],
                   onChanged: (val) {
                     setState(() {
@@ -783,6 +791,7 @@ class _AddEventModalState extends State<_AddEventModal> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

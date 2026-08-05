@@ -98,37 +98,42 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           ),
         ],
       ),
-      body: Consumer<ExpensesNotifier>(
-        builder: (context, notifier, child) {
-          return Column(
-            children: [
-              // 1. FILTER SUMMARY CARD (DASHBOARD CARD FOR FILTERED VALUE)
-              _buildFilteredSummaryCard(notifier),
+      body: SafeArea(
+        child: Consumer<ExpensesNotifier>(
+          builder: (context, notifier, child) {
+            return Column(
+              children: [
+                // 1. FILTER SUMMARY CARD (DASHBOARD CARD FOR FILTERED VALUE)
+                _buildFilteredSummaryCard(notifier),
 
-              // Status banner for background synchronization
-              if (notifier.isSyncing || notifier.syncErrorMessage != null)
-                _buildSyncStatusBanner(notifier),
+                // Status banner for background synchronization
+                if (notifier.isSyncing || notifier.syncErrorMessage != null)
+                  _buildSyncStatusBanner(notifier),
 
-              // 2. SEARCH BAR & CHIPS SECTION
-              _buildSearchAndFilters(notifier),
+                // 2. SEARCH BAR & CHIPS SECTION
+                _buildSearchAndFilters(notifier),
 
-              // 3. TRANSACTIONS LIST
-              Expanded(
-                child: notifier.isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _buildTransactionsList(notifier),
-              ),
-            ],
-          );
-        },
+                // 3. TRANSACTIONS LIST
+                Expanded(
+                  child: notifier.isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _buildTransactionsList(notifier),
+                ),
+              ],
+            );
+          },
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, AppRoutes.routeAddTransaction);
-        },
-        backgroundColor: const Color(0xFF0F172A), // Slate 900
-        tooltip: 'Nueva Transacción',
-        child: const Icon(Icons.add_rounded, color: Colors.white),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 16.0),
+        child: FloatingActionButton(
+          onPressed: () {
+            Navigator.pushNamed(context, AppRoutes.routeAddTransaction);
+          },
+          backgroundColor: const Color(0xFF0F172A), // Slate 900
+          tooltip: 'Nueva Transacción',
+          child: const Icon(Icons.add_rounded, color: Colors.white),
+        ),
       ),
     );
   }
@@ -662,7 +667,9 @@ class _TransactionDetailModalState extends State<_TransactionDetailModal> {
           topRight: Radius.circular(28),
         ),
       ),
-      child: SingleChildScrollView(
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
           child: Column(
@@ -910,6 +917,7 @@ class _TransactionDetailModalState extends State<_TransactionDetailModal> {
                 const SizedBox(height: 20),
                 DropdownButtonFormField<int>(
                   value: _selectedCategoriaId,
+                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Categoría',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -920,7 +928,10 @@ class _TransactionDetailModalState extends State<_TransactionDetailModal> {
                       .map((cat) {
                     return DropdownMenuItem<int>(
                       value: cat.id,
-                      child: Text(cat.nombre),
+                      child: Text(
+                        cat.nombre,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     );
                   }).toList(),
                   onChanged: (val) {
@@ -932,6 +943,7 @@ class _TransactionDetailModalState extends State<_TransactionDetailModal> {
                 const SizedBox(height: 20),
                 DropdownButtonFormField<int?>(
                   value: _selectedConocidoId,
+                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Contacto (Conocido)',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -940,12 +952,18 @@ class _TransactionDetailModalState extends State<_TransactionDetailModal> {
                   items: [
                     const DropdownMenuItem<int?>(
                       value: null,
-                      child: Text('Ninguno (Desconocido / Temporal)'),
+                      child: Text(
+                        'Ninguno (Desconocido / Temporal)',
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     ...notifier.conocidos.map((c) {
                       return DropdownMenuItem<int?>(
                         value: c.id,
-                        child: Text(c.nombreCompleto),
+                        child: Text(
+                          c.nombreCompleto,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       );
                     }),
                   ],
@@ -1039,6 +1057,7 @@ class _TransactionDetailModalState extends State<_TransactionDetailModal> {
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -1114,6 +1133,7 @@ class _TransactionDetailModalState extends State<_TransactionDetailModal> {
                       )
                     else
                       DropdownButtonFormField<int>(
+                        isExpanded: true,
                         decoration: InputDecoration(
                           hintText: 'Seleccionar contacto',
                           hintStyle: const TextStyle(fontSize: 13),
@@ -1123,7 +1143,11 @@ class _TransactionDetailModalState extends State<_TransactionDetailModal> {
                         items: conocidosSinMp.map((c) {
                           return DropdownMenuItem<int>(
                             value: c.id,
-                            child: Text(c.nombreCompleto, style: const TextStyle(fontSize: 13)),
+                            child: Text(
+                              c.nombreCompleto,
+                              style: const TextStyle(fontSize: 13),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           );
                         }).toList(),
                         onChanged: (value) async {

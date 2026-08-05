@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'core/database/app_database.dart';
 import 'core/navigation/app_routes.dart';
@@ -22,6 +23,15 @@ void main() async {
   // Asegura que las vinculaciones del motor de Flutter estén inicializadas 
   // antes de ejecutar código asíncrono en la base de datos
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Estilo de interfaz del sistema (Barra de estado transparente y barra de navegación Slate)
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark,
+    systemNavigationBarColor: Color(0xFFF1F5F9), // Slate 100
+    systemNavigationBarIconBrightness: Brightness.dark,
+    systemNavigationBarDividerColor: Colors.transparent,
+  ));
 
   // Instanciamos la base de datos SQLite
   final database = AppDatabase();
