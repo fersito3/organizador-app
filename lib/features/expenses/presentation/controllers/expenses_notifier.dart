@@ -49,6 +49,7 @@ class ExpensesNotifier extends ChangeNotifier {
   ) {
     _loadCategorias();
     _subscribeToTransactions();
+    sincronizarMercadoPago();
   }
 
   // Carga inicial de categorías de forma asíncrona
@@ -196,8 +197,6 @@ class ExpensesNotifier extends ChangeNotifier {
       (list) {
         _transacciones = list;
         _isLoading = false;
-        // Lanzamos la sincronización en segundo plano cada vez que recibimos actualizaciones locales frescas
-        sincronizarMercadoPago();
         notifyListeners();
       },
       onError: (error) {

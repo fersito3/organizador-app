@@ -91,6 +91,10 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
     });
 
     const results = response.data.results || [];
+    console.log(`[DEBUG] Resultados crudos obtenidos de MP: ${results.length} transacciones.`);
+    if (results.length > 0) {
+      console.log(`[DEBUG] Primera transacción cruda: ID=${results[0].id}, Estado=${results[0].status}, PayerID=${results[0].payer?.id}, CollectorID=${results[0].collector_id}, Monto=${results[0].transaction_amount}`);
+    }
     
     // Mapeamos y filtramos los pagos aprobados
     const mappedTransactions = results
@@ -125,6 +129,8 @@ app.get('/api/mercadopago/transactions', async (req, res) => {
           proveedor: 'MP'
         };
       });
+
+    console.log(`[DEBUG] Transacciones aprobadas mapeadas y enviadas al cliente: ${mappedTransactions.length}`);
 
     res.json({
       count: mappedTransactions.length,
