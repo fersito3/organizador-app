@@ -104,7 +104,6 @@ class ExpensesRepository implements IExpensesRepository {
       // Ignorar transacciones previas a la fecha de corte
       if (item.fecha.isBefore(cutoffDate)) continue;
 
-      final int categoriaFinalId = (item.categoriaId > 0) ? item.categoriaId : catFallbackId;
       final cleanContraparteMpId = item.contraparteMpId?.trim();
 
       debugPrint('🚩 [REPO_FLAG 3: PROCESANDO ITEM] paymentId=${item.mpPaymentId}, desc="${item.descripcion}", contraparteMpId="$cleanContraparteMpId"');
