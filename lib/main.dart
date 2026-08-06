@@ -18,6 +18,9 @@ import 'features/calendar/presentation/controllers/calendar_notifier.dart';
 import 'features/tasks/domain/repositories/itasks_repository.dart';
 import 'features/tasks/data/repositories/tasks_repository.dart';
 import 'features/tasks/presentation/controllers/tasks_notifier.dart';
+import 'features/personal/domain/repositories/ipersonal_repository.dart';
+import 'features/personal/data/repositories/personal_repository.dart';
+import 'features/personal/presentation/controllers/personal_notifier.dart';
 
 void main() async {
   // Asegura que las vinculaciones del motor de Flutter estén inicializadas 
@@ -58,6 +61,9 @@ void main() async {
         ProxyProvider<AppDatabase, ITasksRepository>(
           update: (_, db, __) => TasksRepository(db),
         ),
+        ProxyProvider<AppDatabase, IPersonalRepository>(
+          update: (_, db, __) => PersonalRepository(db),
+        ),
         // 3. Casos de Uso (Dependen del Repositorio)
         ProxyProvider<IExpensesRepository, GetTransactionsUseCase>(
           update: (_, repo, __) => GetTransactionsUseCase(repo),
@@ -91,6 +97,11 @@ void main() async {
         ChangeNotifierProvider<TasksNotifier>(
           create: (context) => TasksNotifier(
             context.read<ITasksRepository>(),
+          ),
+        ),
+        ChangeNotifierProvider<PersonalNotifier>(
+          create: (context) => PersonalNotifier(
+            context.read<IPersonalRepository>(),
           ),
         ),
       ],

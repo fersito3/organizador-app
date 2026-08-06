@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../controllers/expenses_notifier.dart';
 import '../../domain/models/conocido.dart';
 
@@ -242,13 +243,7 @@ class _ManageConocidosScreenState extends State<ManageConocidosScreen> {
               Navigator.pop(context);
               await notifier.eliminarConocido(c.id);
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Contacto ${c.nombreCompleto} eliminado con éxito.'),
-                    backgroundColor: Colors.red,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+                AppToast.show(context, message: 'Contacto ${c.nombreCompleto} eliminado.', isError: true);
               }
             },
             child: const Text('Eliminar', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
@@ -407,13 +402,7 @@ class _UpsertContactoDialogState extends State<_UpsertContactoDialog> {
 
               if (context.mounted) {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(esEdicion ? 'Contacto actualizado con éxito.' : 'Contacto creado con éxito.'),
-                    backgroundColor: Colors.green,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+                AppToast.show(context, message: esEdicion ? 'Contacto actualizado.' : 'Contacto creado.');
               }
             }
           },

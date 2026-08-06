@@ -2260,6 +2260,1114 @@ class TareasCompanion extends UpdateCompanion<Tarea> {
   }
 }
 
+class $ElementosPersonalesTable extends ElementosPersonales
+    with TableInfo<$ElementosPersonalesTable, ElementoPersonal> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ElementosPersonalesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _tituloMeta = const VerificationMeta('titulo');
+  @override
+  late final GeneratedColumn<String> titulo = GeneratedColumn<String>(
+    'titulo',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 150,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contenidoMeta = const VerificationMeta(
+    'contenido',
+  );
+  @override
+  late final GeneratedColumn<String> contenido = GeneratedColumn<String>(
+    'contenido',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<TipoElementoPersonal, int> tipo =
+      GeneratedColumn<int>(
+        'tipo',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: true,
+      ).withConverter<TipoElementoPersonal>(
+        $ElementosPersonalesTable.$convertertipo,
+      );
+  static const VerificationMeta _categoriaMeta = const VerificationMeta(
+    'categoria',
+  );
+  @override
+  late final GeneratedColumn<String> categoria = GeneratedColumn<String>(
+    'categoria',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('General'),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<Prioridad, int> prioridad =
+      GeneratedColumn<int>(
+        'prioridad',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(1),
+      ).withConverter<Prioridad>($ElementosPersonalesTable.$converterprioridad);
+  static const VerificationMeta _esFijadoMeta = const VerificationMeta(
+    'esFijado',
+  );
+  @override
+  late final GeneratedColumn<bool> esFijado = GeneratedColumn<bool>(
+    'es_fijado',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("es_fijado" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _fechaCreacionMeta = const VerificationMeta(
+    'fechaCreacion',
+  );
+  @override
+  late final GeneratedColumn<DateTime> fechaCreacion =
+      GeneratedColumn<DateTime>(
+        'fecha_creacion',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _fechaActualizacionMeta =
+      const VerificationMeta('fechaActualizacion');
+  @override
+  late final GeneratedColumn<DateTime> fechaActualizacion =
+      GeneratedColumn<DateTime>(
+        'fecha_actualizacion',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _progresoActualMeta = const VerificationMeta(
+    'progresoActual',
+  );
+  @override
+  late final GeneratedColumn<int> progresoActual = GeneratedColumn<int>(
+    'progreso_actual',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _progresoTotalMeta = const VerificationMeta(
+    'progresoTotal',
+  );
+  @override
+  late final GeneratedColumn<int> progresoTotal = GeneratedColumn<int>(
+    'progreso_total',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _fechaObjetivoMeta = const VerificationMeta(
+    'fechaObjetivo',
+  );
+  @override
+  late final GeneratedColumn<DateTime> fechaObjetivo =
+      GeneratedColumn<DateTime>(
+        'fecha_objetivo',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    titulo,
+    contenido,
+    tipo,
+    categoria,
+    prioridad,
+    esFijado,
+    fechaCreacion,
+    fechaActualizacion,
+    progresoActual,
+    progresoTotal,
+    fechaObjetivo,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'elementos_personales';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ElementoPersonal> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('titulo')) {
+      context.handle(
+        _tituloMeta,
+        titulo.isAcceptableOrUnknown(data['titulo']!, _tituloMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tituloMeta);
+    }
+    if (data.containsKey('contenido')) {
+      context.handle(
+        _contenidoMeta,
+        contenido.isAcceptableOrUnknown(data['contenido']!, _contenidoMeta),
+      );
+    }
+    if (data.containsKey('categoria')) {
+      context.handle(
+        _categoriaMeta,
+        categoria.isAcceptableOrUnknown(data['categoria']!, _categoriaMeta),
+      );
+    }
+    if (data.containsKey('es_fijado')) {
+      context.handle(
+        _esFijadoMeta,
+        esFijado.isAcceptableOrUnknown(data['es_fijado']!, _esFijadoMeta),
+      );
+    }
+    if (data.containsKey('fecha_creacion')) {
+      context.handle(
+        _fechaCreacionMeta,
+        fechaCreacion.isAcceptableOrUnknown(
+          data['fecha_creacion']!,
+          _fechaCreacionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_fechaCreacionMeta);
+    }
+    if (data.containsKey('fecha_actualizacion')) {
+      context.handle(
+        _fechaActualizacionMeta,
+        fechaActualizacion.isAcceptableOrUnknown(
+          data['fecha_actualizacion']!,
+          _fechaActualizacionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_fechaActualizacionMeta);
+    }
+    if (data.containsKey('progreso_actual')) {
+      context.handle(
+        _progresoActualMeta,
+        progresoActual.isAcceptableOrUnknown(
+          data['progreso_actual']!,
+          _progresoActualMeta,
+        ),
+      );
+    }
+    if (data.containsKey('progreso_total')) {
+      context.handle(
+        _progresoTotalMeta,
+        progresoTotal.isAcceptableOrUnknown(
+          data['progreso_total']!,
+          _progresoTotalMeta,
+        ),
+      );
+    }
+    if (data.containsKey('fecha_objetivo')) {
+      context.handle(
+        _fechaObjetivoMeta,
+        fechaObjetivo.isAcceptableOrUnknown(
+          data['fecha_objetivo']!,
+          _fechaObjetivoMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ElementoPersonal map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ElementoPersonal(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      titulo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}titulo'],
+      )!,
+      contenido: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}contenido'],
+      ),
+      tipo: $ElementosPersonalesTable.$convertertipo.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}tipo'],
+        )!,
+      ),
+      categoria: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}categoria'],
+      )!,
+      prioridad: $ElementosPersonalesTable.$converterprioridad.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}prioridad'],
+        )!,
+      ),
+      esFijado: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}es_fijado'],
+      )!,
+      fechaCreacion: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fecha_creacion'],
+      )!,
+      fechaActualizacion: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fecha_actualizacion'],
+      )!,
+      progresoActual: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}progreso_actual'],
+      ),
+      progresoTotal: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}progreso_total'],
+      ),
+      fechaObjetivo: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fecha_objetivo'],
+      ),
+    );
+  }
+
+  @override
+  $ElementosPersonalesTable createAlias(String alias) {
+    return $ElementosPersonalesTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<TipoElementoPersonal, int, int> $convertertipo =
+      const EnumIndexConverter<TipoElementoPersonal>(
+        TipoElementoPersonal.values,
+      );
+  static JsonTypeConverter2<Prioridad, int, int> $converterprioridad =
+      const EnumIndexConverter<Prioridad>(Prioridad.values);
+}
+
+class ElementoPersonal extends DataClass
+    implements Insertable<ElementoPersonal> {
+  final int id;
+  final String titulo;
+  final String? contenido;
+  final TipoElementoPersonal tipo;
+  final String categoria;
+  final Prioridad prioridad;
+  final bool esFijado;
+  final DateTime fechaCreacion;
+  final DateTime fechaActualizacion;
+  final int? progresoActual;
+  final int? progresoTotal;
+  final DateTime? fechaObjetivo;
+  const ElementoPersonal({
+    required this.id,
+    required this.titulo,
+    this.contenido,
+    required this.tipo,
+    required this.categoria,
+    required this.prioridad,
+    required this.esFijado,
+    required this.fechaCreacion,
+    required this.fechaActualizacion,
+    this.progresoActual,
+    this.progresoTotal,
+    this.fechaObjetivo,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['titulo'] = Variable<String>(titulo);
+    if (!nullToAbsent || contenido != null) {
+      map['contenido'] = Variable<String>(contenido);
+    }
+    {
+      map['tipo'] = Variable<int>(
+        $ElementosPersonalesTable.$convertertipo.toSql(tipo),
+      );
+    }
+    map['categoria'] = Variable<String>(categoria);
+    {
+      map['prioridad'] = Variable<int>(
+        $ElementosPersonalesTable.$converterprioridad.toSql(prioridad),
+      );
+    }
+    map['es_fijado'] = Variable<bool>(esFijado);
+    map['fecha_creacion'] = Variable<DateTime>(fechaCreacion);
+    map['fecha_actualizacion'] = Variable<DateTime>(fechaActualizacion);
+    if (!nullToAbsent || progresoActual != null) {
+      map['progreso_actual'] = Variable<int>(progresoActual);
+    }
+    if (!nullToAbsent || progresoTotal != null) {
+      map['progreso_total'] = Variable<int>(progresoTotal);
+    }
+    if (!nullToAbsent || fechaObjetivo != null) {
+      map['fecha_objetivo'] = Variable<DateTime>(fechaObjetivo);
+    }
+    return map;
+  }
+
+  ElementosPersonalesCompanion toCompanion(bool nullToAbsent) {
+    return ElementosPersonalesCompanion(
+      id: Value(id),
+      titulo: Value(titulo),
+      contenido: contenido == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contenido),
+      tipo: Value(tipo),
+      categoria: Value(categoria),
+      prioridad: Value(prioridad),
+      esFijado: Value(esFijado),
+      fechaCreacion: Value(fechaCreacion),
+      fechaActualizacion: Value(fechaActualizacion),
+      progresoActual: progresoActual == null && nullToAbsent
+          ? const Value.absent()
+          : Value(progresoActual),
+      progresoTotal: progresoTotal == null && nullToAbsent
+          ? const Value.absent()
+          : Value(progresoTotal),
+      fechaObjetivo: fechaObjetivo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fechaObjetivo),
+    );
+  }
+
+  factory ElementoPersonal.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ElementoPersonal(
+      id: serializer.fromJson<int>(json['id']),
+      titulo: serializer.fromJson<String>(json['titulo']),
+      contenido: serializer.fromJson<String?>(json['contenido']),
+      tipo: $ElementosPersonalesTable.$convertertipo.fromJson(
+        serializer.fromJson<int>(json['tipo']),
+      ),
+      categoria: serializer.fromJson<String>(json['categoria']),
+      prioridad: $ElementosPersonalesTable.$converterprioridad.fromJson(
+        serializer.fromJson<int>(json['prioridad']),
+      ),
+      esFijado: serializer.fromJson<bool>(json['esFijado']),
+      fechaCreacion: serializer.fromJson<DateTime>(json['fechaCreacion']),
+      fechaActualizacion: serializer.fromJson<DateTime>(
+        json['fechaActualizacion'],
+      ),
+      progresoActual: serializer.fromJson<int?>(json['progresoActual']),
+      progresoTotal: serializer.fromJson<int?>(json['progresoTotal']),
+      fechaObjetivo: serializer.fromJson<DateTime?>(json['fechaObjetivo']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'titulo': serializer.toJson<String>(titulo),
+      'contenido': serializer.toJson<String?>(contenido),
+      'tipo': serializer.toJson<int>(
+        $ElementosPersonalesTable.$convertertipo.toJson(tipo),
+      ),
+      'categoria': serializer.toJson<String>(categoria),
+      'prioridad': serializer.toJson<int>(
+        $ElementosPersonalesTable.$converterprioridad.toJson(prioridad),
+      ),
+      'esFijado': serializer.toJson<bool>(esFijado),
+      'fechaCreacion': serializer.toJson<DateTime>(fechaCreacion),
+      'fechaActualizacion': serializer.toJson<DateTime>(fechaActualizacion),
+      'progresoActual': serializer.toJson<int?>(progresoActual),
+      'progresoTotal': serializer.toJson<int?>(progresoTotal),
+      'fechaObjetivo': serializer.toJson<DateTime?>(fechaObjetivo),
+    };
+  }
+
+  ElementoPersonal copyWith({
+    int? id,
+    String? titulo,
+    Value<String?> contenido = const Value.absent(),
+    TipoElementoPersonal? tipo,
+    String? categoria,
+    Prioridad? prioridad,
+    bool? esFijado,
+    DateTime? fechaCreacion,
+    DateTime? fechaActualizacion,
+    Value<int?> progresoActual = const Value.absent(),
+    Value<int?> progresoTotal = const Value.absent(),
+    Value<DateTime?> fechaObjetivo = const Value.absent(),
+  }) => ElementoPersonal(
+    id: id ?? this.id,
+    titulo: titulo ?? this.titulo,
+    contenido: contenido.present ? contenido.value : this.contenido,
+    tipo: tipo ?? this.tipo,
+    categoria: categoria ?? this.categoria,
+    prioridad: prioridad ?? this.prioridad,
+    esFijado: esFijado ?? this.esFijado,
+    fechaCreacion: fechaCreacion ?? this.fechaCreacion,
+    fechaActualizacion: fechaActualizacion ?? this.fechaActualizacion,
+    progresoActual: progresoActual.present
+        ? progresoActual.value
+        : this.progresoActual,
+    progresoTotal: progresoTotal.present
+        ? progresoTotal.value
+        : this.progresoTotal,
+    fechaObjetivo: fechaObjetivo.present
+        ? fechaObjetivo.value
+        : this.fechaObjetivo,
+  );
+  ElementoPersonal copyWithCompanion(ElementosPersonalesCompanion data) {
+    return ElementoPersonal(
+      id: data.id.present ? data.id.value : this.id,
+      titulo: data.titulo.present ? data.titulo.value : this.titulo,
+      contenido: data.contenido.present ? data.contenido.value : this.contenido,
+      tipo: data.tipo.present ? data.tipo.value : this.tipo,
+      categoria: data.categoria.present ? data.categoria.value : this.categoria,
+      prioridad: data.prioridad.present ? data.prioridad.value : this.prioridad,
+      esFijado: data.esFijado.present ? data.esFijado.value : this.esFijado,
+      fechaCreacion: data.fechaCreacion.present
+          ? data.fechaCreacion.value
+          : this.fechaCreacion,
+      fechaActualizacion: data.fechaActualizacion.present
+          ? data.fechaActualizacion.value
+          : this.fechaActualizacion,
+      progresoActual: data.progresoActual.present
+          ? data.progresoActual.value
+          : this.progresoActual,
+      progresoTotal: data.progresoTotal.present
+          ? data.progresoTotal.value
+          : this.progresoTotal,
+      fechaObjetivo: data.fechaObjetivo.present
+          ? data.fechaObjetivo.value
+          : this.fechaObjetivo,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ElementoPersonal(')
+          ..write('id: $id, ')
+          ..write('titulo: $titulo, ')
+          ..write('contenido: $contenido, ')
+          ..write('tipo: $tipo, ')
+          ..write('categoria: $categoria, ')
+          ..write('prioridad: $prioridad, ')
+          ..write('esFijado: $esFijado, ')
+          ..write('fechaCreacion: $fechaCreacion, ')
+          ..write('fechaActualizacion: $fechaActualizacion, ')
+          ..write('progresoActual: $progresoActual, ')
+          ..write('progresoTotal: $progresoTotal, ')
+          ..write('fechaObjetivo: $fechaObjetivo')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    titulo,
+    contenido,
+    tipo,
+    categoria,
+    prioridad,
+    esFijado,
+    fechaCreacion,
+    fechaActualizacion,
+    progresoActual,
+    progresoTotal,
+    fechaObjetivo,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ElementoPersonal &&
+          other.id == this.id &&
+          other.titulo == this.titulo &&
+          other.contenido == this.contenido &&
+          other.tipo == this.tipo &&
+          other.categoria == this.categoria &&
+          other.prioridad == this.prioridad &&
+          other.esFijado == this.esFijado &&
+          other.fechaCreacion == this.fechaCreacion &&
+          other.fechaActualizacion == this.fechaActualizacion &&
+          other.progresoActual == this.progresoActual &&
+          other.progresoTotal == this.progresoTotal &&
+          other.fechaObjetivo == this.fechaObjetivo);
+}
+
+class ElementosPersonalesCompanion extends UpdateCompanion<ElementoPersonal> {
+  final Value<int> id;
+  final Value<String> titulo;
+  final Value<String?> contenido;
+  final Value<TipoElementoPersonal> tipo;
+  final Value<String> categoria;
+  final Value<Prioridad> prioridad;
+  final Value<bool> esFijado;
+  final Value<DateTime> fechaCreacion;
+  final Value<DateTime> fechaActualizacion;
+  final Value<int?> progresoActual;
+  final Value<int?> progresoTotal;
+  final Value<DateTime?> fechaObjetivo;
+  const ElementosPersonalesCompanion({
+    this.id = const Value.absent(),
+    this.titulo = const Value.absent(),
+    this.contenido = const Value.absent(),
+    this.tipo = const Value.absent(),
+    this.categoria = const Value.absent(),
+    this.prioridad = const Value.absent(),
+    this.esFijado = const Value.absent(),
+    this.fechaCreacion = const Value.absent(),
+    this.fechaActualizacion = const Value.absent(),
+    this.progresoActual = const Value.absent(),
+    this.progresoTotal = const Value.absent(),
+    this.fechaObjetivo = const Value.absent(),
+  });
+  ElementosPersonalesCompanion.insert({
+    this.id = const Value.absent(),
+    required String titulo,
+    this.contenido = const Value.absent(),
+    required TipoElementoPersonal tipo,
+    this.categoria = const Value.absent(),
+    this.prioridad = const Value.absent(),
+    this.esFijado = const Value.absent(),
+    required DateTime fechaCreacion,
+    required DateTime fechaActualizacion,
+    this.progresoActual = const Value.absent(),
+    this.progresoTotal = const Value.absent(),
+    this.fechaObjetivo = const Value.absent(),
+  }) : titulo = Value(titulo),
+       tipo = Value(tipo),
+       fechaCreacion = Value(fechaCreacion),
+       fechaActualizacion = Value(fechaActualizacion);
+  static Insertable<ElementoPersonal> custom({
+    Expression<int>? id,
+    Expression<String>? titulo,
+    Expression<String>? contenido,
+    Expression<int>? tipo,
+    Expression<String>? categoria,
+    Expression<int>? prioridad,
+    Expression<bool>? esFijado,
+    Expression<DateTime>? fechaCreacion,
+    Expression<DateTime>? fechaActualizacion,
+    Expression<int>? progresoActual,
+    Expression<int>? progresoTotal,
+    Expression<DateTime>? fechaObjetivo,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (titulo != null) 'titulo': titulo,
+      if (contenido != null) 'contenido': contenido,
+      if (tipo != null) 'tipo': tipo,
+      if (categoria != null) 'categoria': categoria,
+      if (prioridad != null) 'prioridad': prioridad,
+      if (esFijado != null) 'es_fijado': esFijado,
+      if (fechaCreacion != null) 'fecha_creacion': fechaCreacion,
+      if (fechaActualizacion != null) 'fecha_actualizacion': fechaActualizacion,
+      if (progresoActual != null) 'progreso_actual': progresoActual,
+      if (progresoTotal != null) 'progreso_total': progresoTotal,
+      if (fechaObjetivo != null) 'fecha_objetivo': fechaObjetivo,
+    });
+  }
+
+  ElementosPersonalesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? titulo,
+    Value<String?>? contenido,
+    Value<TipoElementoPersonal>? tipo,
+    Value<String>? categoria,
+    Value<Prioridad>? prioridad,
+    Value<bool>? esFijado,
+    Value<DateTime>? fechaCreacion,
+    Value<DateTime>? fechaActualizacion,
+    Value<int?>? progresoActual,
+    Value<int?>? progresoTotal,
+    Value<DateTime?>? fechaObjetivo,
+  }) {
+    return ElementosPersonalesCompanion(
+      id: id ?? this.id,
+      titulo: titulo ?? this.titulo,
+      contenido: contenido ?? this.contenido,
+      tipo: tipo ?? this.tipo,
+      categoria: categoria ?? this.categoria,
+      prioridad: prioridad ?? this.prioridad,
+      esFijado: esFijado ?? this.esFijado,
+      fechaCreacion: fechaCreacion ?? this.fechaCreacion,
+      fechaActualizacion: fechaActualizacion ?? this.fechaActualizacion,
+      progresoActual: progresoActual ?? this.progresoActual,
+      progresoTotal: progresoTotal ?? this.progresoTotal,
+      fechaObjetivo: fechaObjetivo ?? this.fechaObjetivo,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (titulo.present) {
+      map['titulo'] = Variable<String>(titulo.value);
+    }
+    if (contenido.present) {
+      map['contenido'] = Variable<String>(contenido.value);
+    }
+    if (tipo.present) {
+      map['tipo'] = Variable<int>(
+        $ElementosPersonalesTable.$convertertipo.toSql(tipo.value),
+      );
+    }
+    if (categoria.present) {
+      map['categoria'] = Variable<String>(categoria.value);
+    }
+    if (prioridad.present) {
+      map['prioridad'] = Variable<int>(
+        $ElementosPersonalesTable.$converterprioridad.toSql(prioridad.value),
+      );
+    }
+    if (esFijado.present) {
+      map['es_fijado'] = Variable<bool>(esFijado.value);
+    }
+    if (fechaCreacion.present) {
+      map['fecha_creacion'] = Variable<DateTime>(fechaCreacion.value);
+    }
+    if (fechaActualizacion.present) {
+      map['fecha_actualizacion'] = Variable<DateTime>(fechaActualizacion.value);
+    }
+    if (progresoActual.present) {
+      map['progreso_actual'] = Variable<int>(progresoActual.value);
+    }
+    if (progresoTotal.present) {
+      map['progreso_total'] = Variable<int>(progresoTotal.value);
+    }
+    if (fechaObjetivo.present) {
+      map['fecha_objetivo'] = Variable<DateTime>(fechaObjetivo.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ElementosPersonalesCompanion(')
+          ..write('id: $id, ')
+          ..write('titulo: $titulo, ')
+          ..write('contenido: $contenido, ')
+          ..write('tipo: $tipo, ')
+          ..write('categoria: $categoria, ')
+          ..write('prioridad: $prioridad, ')
+          ..write('esFijado: $esFijado, ')
+          ..write('fechaCreacion: $fechaCreacion, ')
+          ..write('fechaActualizacion: $fechaActualizacion, ')
+          ..write('progresoActual: $progresoActual, ')
+          ..write('progresoTotal: $progresoTotal, ')
+          ..write('fechaObjetivo: $fechaObjetivo')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ItemsListaTable extends ItemsLista
+    with TableInfo<$ItemsListaTable, ItemListaData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ItemsListaTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _elementoIdMeta = const VerificationMeta(
+    'elementoId',
+  );
+  @override
+  late final GeneratedColumn<int> elementoId = GeneratedColumn<int>(
+    'elemento_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES elementos_personales (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _textoMeta = const VerificationMeta('texto');
+  @override
+  late final GeneratedColumn<String> texto = GeneratedColumn<String>(
+    'texto',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 200,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _completadoMeta = const VerificationMeta(
+    'completado',
+  );
+  @override
+  late final GeneratedColumn<bool> completado = GeneratedColumn<bool>(
+    'completado',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("completado" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _ordenMeta = const VerificationMeta('orden');
+  @override
+  late final GeneratedColumn<int> orden = GeneratedColumn<int>(
+    'orden',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    elementoId,
+    texto,
+    completado,
+    orden,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'items_lista';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ItemListaData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('elemento_id')) {
+      context.handle(
+        _elementoIdMeta,
+        elementoId.isAcceptableOrUnknown(data['elemento_id']!, _elementoIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_elementoIdMeta);
+    }
+    if (data.containsKey('texto')) {
+      context.handle(
+        _textoMeta,
+        texto.isAcceptableOrUnknown(data['texto']!, _textoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_textoMeta);
+    }
+    if (data.containsKey('completado')) {
+      context.handle(
+        _completadoMeta,
+        completado.isAcceptableOrUnknown(data['completado']!, _completadoMeta),
+      );
+    }
+    if (data.containsKey('orden')) {
+      context.handle(
+        _ordenMeta,
+        orden.isAcceptableOrUnknown(data['orden']!, _ordenMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ItemListaData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ItemListaData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      elementoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}elemento_id'],
+      )!,
+      texto: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}texto'],
+      )!,
+      completado: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}completado'],
+      )!,
+      orden: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}orden'],
+      )!,
+    );
+  }
+
+  @override
+  $ItemsListaTable createAlias(String alias) {
+    return $ItemsListaTable(attachedDatabase, alias);
+  }
+}
+
+class ItemListaData extends DataClass implements Insertable<ItemListaData> {
+  final int id;
+  final int elementoId;
+  final String texto;
+  final bool completado;
+  final int orden;
+  const ItemListaData({
+    required this.id,
+    required this.elementoId,
+    required this.texto,
+    required this.completado,
+    required this.orden,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['elemento_id'] = Variable<int>(elementoId);
+    map['texto'] = Variable<String>(texto);
+    map['completado'] = Variable<bool>(completado);
+    map['orden'] = Variable<int>(orden);
+    return map;
+  }
+
+  ItemsListaCompanion toCompanion(bool nullToAbsent) {
+    return ItemsListaCompanion(
+      id: Value(id),
+      elementoId: Value(elementoId),
+      texto: Value(texto),
+      completado: Value(completado),
+      orden: Value(orden),
+    );
+  }
+
+  factory ItemListaData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ItemListaData(
+      id: serializer.fromJson<int>(json['id']),
+      elementoId: serializer.fromJson<int>(json['elementoId']),
+      texto: serializer.fromJson<String>(json['texto']),
+      completado: serializer.fromJson<bool>(json['completado']),
+      orden: serializer.fromJson<int>(json['orden']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'elementoId': serializer.toJson<int>(elementoId),
+      'texto': serializer.toJson<String>(texto),
+      'completado': serializer.toJson<bool>(completado),
+      'orden': serializer.toJson<int>(orden),
+    };
+  }
+
+  ItemListaData copyWith({
+    int? id,
+    int? elementoId,
+    String? texto,
+    bool? completado,
+    int? orden,
+  }) => ItemListaData(
+    id: id ?? this.id,
+    elementoId: elementoId ?? this.elementoId,
+    texto: texto ?? this.texto,
+    completado: completado ?? this.completado,
+    orden: orden ?? this.orden,
+  );
+  ItemListaData copyWithCompanion(ItemsListaCompanion data) {
+    return ItemListaData(
+      id: data.id.present ? data.id.value : this.id,
+      elementoId: data.elementoId.present
+          ? data.elementoId.value
+          : this.elementoId,
+      texto: data.texto.present ? data.texto.value : this.texto,
+      completado: data.completado.present
+          ? data.completado.value
+          : this.completado,
+      orden: data.orden.present ? data.orden.value : this.orden,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ItemListaData(')
+          ..write('id: $id, ')
+          ..write('elementoId: $elementoId, ')
+          ..write('texto: $texto, ')
+          ..write('completado: $completado, ')
+          ..write('orden: $orden')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, elementoId, texto, completado, orden);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ItemListaData &&
+          other.id == this.id &&
+          other.elementoId == this.elementoId &&
+          other.texto == this.texto &&
+          other.completado == this.completado &&
+          other.orden == this.orden);
+}
+
+class ItemsListaCompanion extends UpdateCompanion<ItemListaData> {
+  final Value<int> id;
+  final Value<int> elementoId;
+  final Value<String> texto;
+  final Value<bool> completado;
+  final Value<int> orden;
+  const ItemsListaCompanion({
+    this.id = const Value.absent(),
+    this.elementoId = const Value.absent(),
+    this.texto = const Value.absent(),
+    this.completado = const Value.absent(),
+    this.orden = const Value.absent(),
+  });
+  ItemsListaCompanion.insert({
+    this.id = const Value.absent(),
+    required int elementoId,
+    required String texto,
+    this.completado = const Value.absent(),
+    this.orden = const Value.absent(),
+  }) : elementoId = Value(elementoId),
+       texto = Value(texto);
+  static Insertable<ItemListaData> custom({
+    Expression<int>? id,
+    Expression<int>? elementoId,
+    Expression<String>? texto,
+    Expression<bool>? completado,
+    Expression<int>? orden,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (elementoId != null) 'elemento_id': elementoId,
+      if (texto != null) 'texto': texto,
+      if (completado != null) 'completado': completado,
+      if (orden != null) 'orden': orden,
+    });
+  }
+
+  ItemsListaCompanion copyWith({
+    Value<int>? id,
+    Value<int>? elementoId,
+    Value<String>? texto,
+    Value<bool>? completado,
+    Value<int>? orden,
+  }) {
+    return ItemsListaCompanion(
+      id: id ?? this.id,
+      elementoId: elementoId ?? this.elementoId,
+      texto: texto ?? this.texto,
+      completado: completado ?? this.completado,
+      orden: orden ?? this.orden,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (elementoId.present) {
+      map['elemento_id'] = Variable<int>(elementoId.value);
+    }
+    if (texto.present) {
+      map['texto'] = Variable<String>(texto.value);
+    }
+    if (completado.present) {
+      map['completado'] = Variable<bool>(completado.value);
+    }
+    if (orden.present) {
+      map['orden'] = Variable<int>(orden.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ItemsListaCompanion(')
+          ..write('id: $id, ')
+          ..write('elementoId: $elementoId, ')
+          ..write('texto: $texto, ')
+          ..write('completado: $completado, ')
+          ..write('orden: $orden')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2268,6 +3376,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TransaccionesTable transacciones = $TransaccionesTable(this);
   late final $EventosTable eventos = $EventosTable(this);
   late final $TareasTable tareas = $TareasTable(this);
+  late final $ElementosPersonalesTable elementosPersonales =
+      $ElementosPersonalesTable(this);
+  late final $ItemsListaTable itemsLista = $ItemsListaTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2278,7 +3389,19 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     transacciones,
     eventos,
     tareas,
+    elementosPersonales,
+    itemsLista,
   ];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'elementos_personales',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('items_lista', kind: UpdateKind.delete)],
+    ),
+  ]);
 }
 
 typedef $$CategoriasTableCreateCompanionBuilder =
@@ -4257,6 +5380,783 @@ typedef $$TareasTableProcessedTableManager =
       Tarea,
       PrefetchHooks Function({bool eventoId})
     >;
+typedef $$ElementosPersonalesTableCreateCompanionBuilder =
+    ElementosPersonalesCompanion Function({
+      Value<int> id,
+      required String titulo,
+      Value<String?> contenido,
+      required TipoElementoPersonal tipo,
+      Value<String> categoria,
+      Value<Prioridad> prioridad,
+      Value<bool> esFijado,
+      required DateTime fechaCreacion,
+      required DateTime fechaActualizacion,
+      Value<int?> progresoActual,
+      Value<int?> progresoTotal,
+      Value<DateTime?> fechaObjetivo,
+    });
+typedef $$ElementosPersonalesTableUpdateCompanionBuilder =
+    ElementosPersonalesCompanion Function({
+      Value<int> id,
+      Value<String> titulo,
+      Value<String?> contenido,
+      Value<TipoElementoPersonal> tipo,
+      Value<String> categoria,
+      Value<Prioridad> prioridad,
+      Value<bool> esFijado,
+      Value<DateTime> fechaCreacion,
+      Value<DateTime> fechaActualizacion,
+      Value<int?> progresoActual,
+      Value<int?> progresoTotal,
+      Value<DateTime?> fechaObjetivo,
+    });
+
+final class $$ElementosPersonalesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ElementosPersonalesTable,
+          ElementoPersonal
+        > {
+  $$ElementosPersonalesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static MultiTypedResultKey<$ItemsListaTable, List<ItemListaData>>
+  _itemsListaRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.itemsLista,
+    aliasName: 'elementos_personales__id__items_lista__elemento_id',
+  );
+
+  $$ItemsListaTableProcessedTableManager get itemsListaRefs {
+    final manager = $$ItemsListaTableTableManager(
+      $_db,
+      $_db.itemsLista,
+    ).filter((f) => f.elementoId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_itemsListaRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ElementosPersonalesTableFilterComposer
+    extends Composer<_$AppDatabase, $ElementosPersonalesTable> {
+  $$ElementosPersonalesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get titulo => $composableBuilder(
+    column: $table.titulo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contenido => $composableBuilder(
+    column: $table.contenido,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<
+    TipoElementoPersonal,
+    TipoElementoPersonal,
+    int
+  >
+  get tipo => $composableBuilder(
+    column: $table.tipo,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get categoria => $composableBuilder(
+    column: $table.categoria,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<Prioridad, Prioridad, int> get prioridad =>
+      $composableBuilder(
+        column: $table.prioridad,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<bool> get esFijado => $composableBuilder(
+    column: $table.esFijado,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get fechaCreacion => $composableBuilder(
+    column: $table.fechaCreacion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get fechaActualizacion => $composableBuilder(
+    column: $table.fechaActualizacion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get progresoActual => $composableBuilder(
+    column: $table.progresoActual,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get progresoTotal => $composableBuilder(
+    column: $table.progresoTotal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get fechaObjetivo => $composableBuilder(
+    column: $table.fechaObjetivo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> itemsListaRefs(
+    Expression<bool> Function($$ItemsListaTableFilterComposer f) f,
+  ) {
+    final $$ItemsListaTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.itemsLista,
+      getReferencedColumn: (t) => t.elementoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ItemsListaTableFilterComposer(
+            $db: $db,
+            $table: $db.itemsLista,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ElementosPersonalesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ElementosPersonalesTable> {
+  $$ElementosPersonalesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get titulo => $composableBuilder(
+    column: $table.titulo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contenido => $composableBuilder(
+    column: $table.contenido,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tipo => $composableBuilder(
+    column: $table.tipo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get categoria => $composableBuilder(
+    column: $table.categoria,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get prioridad => $composableBuilder(
+    column: $table.prioridad,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get esFijado => $composableBuilder(
+    column: $table.esFijado,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get fechaCreacion => $composableBuilder(
+    column: $table.fechaCreacion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get fechaActualizacion => $composableBuilder(
+    column: $table.fechaActualizacion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get progresoActual => $composableBuilder(
+    column: $table.progresoActual,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get progresoTotal => $composableBuilder(
+    column: $table.progresoTotal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get fechaObjetivo => $composableBuilder(
+    column: $table.fechaObjetivo,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ElementosPersonalesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ElementosPersonalesTable> {
+  $$ElementosPersonalesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get titulo =>
+      $composableBuilder(column: $table.titulo, builder: (column) => column);
+
+  GeneratedColumn<String> get contenido =>
+      $composableBuilder(column: $table.contenido, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<TipoElementoPersonal, int> get tipo =>
+      $composableBuilder(column: $table.tipo, builder: (column) => column);
+
+  GeneratedColumn<String> get categoria =>
+      $composableBuilder(column: $table.categoria, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<Prioridad, int> get prioridad =>
+      $composableBuilder(column: $table.prioridad, builder: (column) => column);
+
+  GeneratedColumn<bool> get esFijado =>
+      $composableBuilder(column: $table.esFijado, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get fechaCreacion => $composableBuilder(
+    column: $table.fechaCreacion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get fechaActualizacion => $composableBuilder(
+    column: $table.fechaActualizacion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get progresoActual => $composableBuilder(
+    column: $table.progresoActual,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get progresoTotal => $composableBuilder(
+    column: $table.progresoTotal,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get fechaObjetivo => $composableBuilder(
+    column: $table.fechaObjetivo,
+    builder: (column) => column,
+  );
+
+  Expression<T> itemsListaRefs<T extends Object>(
+    Expression<T> Function($$ItemsListaTableAnnotationComposer a) f,
+  ) {
+    final $$ItemsListaTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.itemsLista,
+      getReferencedColumn: (t) => t.elementoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ItemsListaTableAnnotationComposer(
+            $db: $db,
+            $table: $db.itemsLista,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ElementosPersonalesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ElementosPersonalesTable,
+          ElementoPersonal,
+          $$ElementosPersonalesTableFilterComposer,
+          $$ElementosPersonalesTableOrderingComposer,
+          $$ElementosPersonalesTableAnnotationComposer,
+          $$ElementosPersonalesTableCreateCompanionBuilder,
+          $$ElementosPersonalesTableUpdateCompanionBuilder,
+          (ElementoPersonal, $$ElementosPersonalesTableReferences),
+          ElementoPersonal,
+          PrefetchHooks Function({bool itemsListaRefs})
+        > {
+  $$ElementosPersonalesTableTableManager(
+    _$AppDatabase db,
+    $ElementosPersonalesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ElementosPersonalesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ElementosPersonalesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ElementosPersonalesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> titulo = const Value.absent(),
+                Value<String?> contenido = const Value.absent(),
+                Value<TipoElementoPersonal> tipo = const Value.absent(),
+                Value<String> categoria = const Value.absent(),
+                Value<Prioridad> prioridad = const Value.absent(),
+                Value<bool> esFijado = const Value.absent(),
+                Value<DateTime> fechaCreacion = const Value.absent(),
+                Value<DateTime> fechaActualizacion = const Value.absent(),
+                Value<int?> progresoActual = const Value.absent(),
+                Value<int?> progresoTotal = const Value.absent(),
+                Value<DateTime?> fechaObjetivo = const Value.absent(),
+              }) => ElementosPersonalesCompanion(
+                id: id,
+                titulo: titulo,
+                contenido: contenido,
+                tipo: tipo,
+                categoria: categoria,
+                prioridad: prioridad,
+                esFijado: esFijado,
+                fechaCreacion: fechaCreacion,
+                fechaActualizacion: fechaActualizacion,
+                progresoActual: progresoActual,
+                progresoTotal: progresoTotal,
+                fechaObjetivo: fechaObjetivo,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String titulo,
+                Value<String?> contenido = const Value.absent(),
+                required TipoElementoPersonal tipo,
+                Value<String> categoria = const Value.absent(),
+                Value<Prioridad> prioridad = const Value.absent(),
+                Value<bool> esFijado = const Value.absent(),
+                required DateTime fechaCreacion,
+                required DateTime fechaActualizacion,
+                Value<int?> progresoActual = const Value.absent(),
+                Value<int?> progresoTotal = const Value.absent(),
+                Value<DateTime?> fechaObjetivo = const Value.absent(),
+              }) => ElementosPersonalesCompanion.insert(
+                id: id,
+                titulo: titulo,
+                contenido: contenido,
+                tipo: tipo,
+                categoria: categoria,
+                prioridad: prioridad,
+                esFijado: esFijado,
+                fechaCreacion: fechaCreacion,
+                fechaActualizacion: fechaActualizacion,
+                progresoActual: progresoActual,
+                progresoTotal: progresoTotal,
+                fechaObjetivo: fechaObjetivo,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ElementosPersonalesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({itemsListaRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (itemsListaRefs) db.itemsLista],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (itemsListaRefs)
+                    await $_getPrefetchedData<
+                      ElementoPersonal,
+                      $ElementosPersonalesTable,
+                      ItemListaData
+                    >(
+                      currentTable: table,
+                      referencedTable: $$ElementosPersonalesTableReferences
+                          ._itemsListaRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$ElementosPersonalesTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).itemsListaRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.elementoId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ElementosPersonalesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ElementosPersonalesTable,
+      ElementoPersonal,
+      $$ElementosPersonalesTableFilterComposer,
+      $$ElementosPersonalesTableOrderingComposer,
+      $$ElementosPersonalesTableAnnotationComposer,
+      $$ElementosPersonalesTableCreateCompanionBuilder,
+      $$ElementosPersonalesTableUpdateCompanionBuilder,
+      (ElementoPersonal, $$ElementosPersonalesTableReferences),
+      ElementoPersonal,
+      PrefetchHooks Function({bool itemsListaRefs})
+    >;
+typedef $$ItemsListaTableCreateCompanionBuilder =
+    ItemsListaCompanion Function({
+      Value<int> id,
+      required int elementoId,
+      required String texto,
+      Value<bool> completado,
+      Value<int> orden,
+    });
+typedef $$ItemsListaTableUpdateCompanionBuilder =
+    ItemsListaCompanion Function({
+      Value<int> id,
+      Value<int> elementoId,
+      Value<String> texto,
+      Value<bool> completado,
+      Value<int> orden,
+    });
+
+final class $$ItemsListaTableReferences
+    extends BaseReferences<_$AppDatabase, $ItemsListaTable, ItemListaData> {
+  $$ItemsListaTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ElementosPersonalesTable _elementoIdTable(_$AppDatabase db) => db
+      .elementosPersonales
+      .createAlias('items_lista__elemento_id__elementos_personales__id');
+
+  $$ElementosPersonalesTableProcessedTableManager get elementoId {
+    final $_column = $_itemColumn<int>('elemento_id')!;
+
+    final manager = $$ElementosPersonalesTableTableManager(
+      $_db,
+      $_db.elementosPersonales,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_elementoIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ItemsListaTableFilterComposer
+    extends Composer<_$AppDatabase, $ItemsListaTable> {
+  $$ItemsListaTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get texto => $composableBuilder(
+    column: $table.texto,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get completado => $composableBuilder(
+    column: $table.completado,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get orden => $composableBuilder(
+    column: $table.orden,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ElementosPersonalesTableFilterComposer get elementoId {
+    final $$ElementosPersonalesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.elementoId,
+      referencedTable: $db.elementosPersonales,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ElementosPersonalesTableFilterComposer(
+            $db: $db,
+            $table: $db.elementosPersonales,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ItemsListaTableOrderingComposer
+    extends Composer<_$AppDatabase, $ItemsListaTable> {
+  $$ItemsListaTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get texto => $composableBuilder(
+    column: $table.texto,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get completado => $composableBuilder(
+    column: $table.completado,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get orden => $composableBuilder(
+    column: $table.orden,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ElementosPersonalesTableOrderingComposer get elementoId {
+    final $$ElementosPersonalesTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.elementoId,
+          referencedTable: $db.elementosPersonales,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ElementosPersonalesTableOrderingComposer(
+                $db: $db,
+                $table: $db.elementosPersonales,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$ItemsListaTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ItemsListaTable> {
+  $$ItemsListaTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get texto =>
+      $composableBuilder(column: $table.texto, builder: (column) => column);
+
+  GeneratedColumn<bool> get completado => $composableBuilder(
+    column: $table.completado,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get orden =>
+      $composableBuilder(column: $table.orden, builder: (column) => column);
+
+  $$ElementosPersonalesTableAnnotationComposer get elementoId {
+    final $$ElementosPersonalesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.elementoId,
+          referencedTable: $db.elementosPersonales,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ElementosPersonalesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.elementosPersonales,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$ItemsListaTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ItemsListaTable,
+          ItemListaData,
+          $$ItemsListaTableFilterComposer,
+          $$ItemsListaTableOrderingComposer,
+          $$ItemsListaTableAnnotationComposer,
+          $$ItemsListaTableCreateCompanionBuilder,
+          $$ItemsListaTableUpdateCompanionBuilder,
+          (ItemListaData, $$ItemsListaTableReferences),
+          ItemListaData,
+          PrefetchHooks Function({bool elementoId})
+        > {
+  $$ItemsListaTableTableManager(_$AppDatabase db, $ItemsListaTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ItemsListaTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ItemsListaTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ItemsListaTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> elementoId = const Value.absent(),
+                Value<String> texto = const Value.absent(),
+                Value<bool> completado = const Value.absent(),
+                Value<int> orden = const Value.absent(),
+              }) => ItemsListaCompanion(
+                id: id,
+                elementoId: elementoId,
+                texto: texto,
+                completado: completado,
+                orden: orden,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int elementoId,
+                required String texto,
+                Value<bool> completado = const Value.absent(),
+                Value<int> orden = const Value.absent(),
+              }) => ItemsListaCompanion.insert(
+                id: id,
+                elementoId: elementoId,
+                texto: texto,
+                completado: completado,
+                orden: orden,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ItemsListaTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({elementoId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (elementoId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.elementoId,
+                                referencedTable: $$ItemsListaTableReferences
+                                    ._elementoIdTable(db),
+                                referencedColumn: $$ItemsListaTableReferences
+                                    ._elementoIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ItemsListaTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ItemsListaTable,
+      ItemListaData,
+      $$ItemsListaTableFilterComposer,
+      $$ItemsListaTableOrderingComposer,
+      $$ItemsListaTableAnnotationComposer,
+      $$ItemsListaTableCreateCompanionBuilder,
+      $$ItemsListaTableUpdateCompanionBuilder,
+      (ItemListaData, $$ItemsListaTableReferences),
+      ItemListaData,
+      PrefetchHooks Function({bool elementoId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4271,4 +6171,8 @@ class $AppDatabaseManager {
       $$EventosTableTableManager(_db, _db.eventos);
   $$TareasTableTableManager get tareas =>
       $$TareasTableTableManager(_db, _db.tareas);
+  $$ElementosPersonalesTableTableManager get elementosPersonales =>
+      $$ElementosPersonalesTableTableManager(_db, _db.elementosPersonales);
+  $$ItemsListaTableTableManager get itemsLista =>
+      $$ItemsListaTableTableManager(_db, _db.itemsLista);
 }

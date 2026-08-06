@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/enums.dart';
 import '../../../../core/navigation/app_routes.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../../domain/models/transaccion.dart';
 import '../../domain/models/categoria_domain.dart';
 import '../controllers/expenses_notifier.dart';
@@ -82,14 +83,10 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   await notifier.sincronizarMercadoPago();
                   if (context.mounted) {
                     final err = notifier.syncErrorMessage;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(err != null
-                            ? 'Error al sincronizar: $err'
-                            : 'Sincronización de Mercado Pago completada con éxito.'),
-                        backgroundColor: err != null ? Colors.red : Colors.green,
-                        behavior: SnackBarBehavior.floating,
-                      ),
+                    AppToast.show(
+                      context,
+                      message: err != null ? 'Error al sincronizar: $err' : 'Sincronización completada.',
+                      isError: err != null,
                     );
                   }
                 },
@@ -170,19 +167,34 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Saldo de Selección',
-            style: TextStyle(
-              color: Color(0xFF94A3B8), // Slate 400
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Saldo de Selección',
+                style: TextStyle(
+                  color: Color(0xFF94A3B8), // Slate 400
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              GestureDetector(
+                onTap: () => notifier.toggleOcultarSaldos(),
+                child: Icon(
+                  notifier.ocultarSaldos ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                  color: const Color(0xFF64748B),
+                  size: 18,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           Text(
-            '${esNegativo ? '-' : ''}\$${balance.abs().toStringAsFixed(2)}',
+            notifier.formatearMonto(balance),
             style: TextStyle(
-              color: esNegativo ? const Color(0xFFF87171) : Colors.white,
+              color: notifier.ocultarSaldos
+                  ? const Color(0xFF64748B)
+                  : (esNegativo ? const Color(0xFFF87171) : Colors.white),
               fontSize: 26,
               fontWeight: FontWeight.bold,
             ),
@@ -200,7 +212,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       children: [
                         const Text('Ingresos', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10)),
                         Text(
-                          '\$${ingresos.toStringAsFixed(2)}',
+                          notifier.formatearMonto(ingresos),
                           style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -220,7 +232,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       children: [
                         const Text('Gastos', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10)),
                         Text(
-                          '\$${egresos.toStringAsFixed(2)}',
+                          notifier.formatearMonto(egresos),
                           style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -531,7 +543,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       const SizedBox(width: 8),
                       // Amount
                       Text(
-                        '${esEgreso ? '-' : '+'}\$${item.monto.toStringAsFixed(2)}',
+                        notifier.formatearMonto(esEgreso ? -item.monto : item.monto),
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -863,13 +875,7 @@ class _TransactionDetailModalState extends State<_TransactionDetailModal> {
                               await notifier.eliminarTransaccion(widget.item.id);
                               if (!context.mounted) return;
                               Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Transacción eliminada con éxito.'),
-                                  backgroundColor: Colors.red,
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
+                              AppToast.show(context, message: 'Transacción eliminada.', isError: true);
                             }
                           }
                         },
@@ -1006,12 +1012,7 @@ class _TransactionDetailModalState extends State<_TransactionDetailModal> {
                         onPressed: () async {
                           final nuevaDesc = _descripcionController.text.trim();
                           if (nuevaDesc.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('La descripción no puede estar vacía.'),
-                                backgroundColor: Colors.orange,
-                              ),
-                            );
+                            AppToast.show(context, message: 'La descripción no puede estar vacía.', isError: true);
                             return;
                           }
                           
@@ -1028,13 +1029,7 @@ class _TransactionDetailModalState extends State<_TransactionDetailModal> {
 
                           if (context.mounted) {
                             Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Cambios guardados con éxito.'),
-                                backgroundColor: Colors.green,
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
+                            AppToast.show(context, message: 'Cambios guardados.');
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -1160,12 +1155,7 @@ class _TransactionDetailModalState extends State<_TransactionDetailModal> {
                               conocidoId: c.id,
                               nombreCompleto: c.nombreCompleto,
                             );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Transacciones vinculadas con éxito a ${c.nombreCompleto}.'),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
+                            AppToast.show(context, message: 'Transacciones vinculadas a ${c.nombreCompleto}.');
                           }
                         },
                       ),
@@ -1280,12 +1270,7 @@ class _BuildNewConocidoFormState extends State<_BuildNewConocidoForm> {
                 Navigator.pop(widget.dialogContext);
                 Navigator.pop(widget.parentContext);
 
-                ScaffoldMessenger.of(widget.parentContext).showSnackBar(
-                  SnackBar(
-                    content: Text('Conocido $nombreCompleto creado y transacciones vinculadas.'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+                AppToast.show(widget.parentContext, message: 'Conocido $nombreCompleto creado y transacciones vinculadas.');
               }
             },
             style: ElevatedButton.styleFrom(

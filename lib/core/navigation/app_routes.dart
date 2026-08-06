@@ -6,6 +6,7 @@ import '../../features/calendar/presentation/screens/calendar_screen.dart';
 import '../../features/expenses/presentation/screens/manage_conocidos_screen.dart';
 import '../../features/tasks/presentation/screens/tasks_screen.dart';
 import '../../features/stats/presentation/screens/stats_screen.dart';
+import '../../features/personal/presentation/screens/personal_space_screen.dart';
 
 class AppRoutes {
   static const String routeHome = '/';
@@ -13,6 +14,7 @@ class AppRoutes {
   static const String routeAddTransaction = '/add-transaction';
   static const String routeCalendar = '/calendar';
   static const String routeTasks = '/tasks';
+  static const String routePersonalSpace = '/personal-space';
   static const String routeManageConocidos = '/manage-conocidos';
   static const String routeStats = '/stats';
 
@@ -34,14 +36,21 @@ class AppRoutes {
           builder: (_) => const AddTransactionScreen(),
         );
       case routeCalendar:
+        final tabIndex = (settings.arguments as int?) ?? 0;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const CalendarScreen(),
+          builder: (_) => CalendarScreen(initialTab: tabIndex),
         );
       case routeTasks:
+        final tabIndex = (settings.arguments as int?) ?? 1;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const TasksScreen(),
+          builder: (_) => CalendarScreen(initialTab: tabIndex),
+        );
+      case routePersonalSpace:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const PersonalSpaceScreen(),
         );
       case routeManageConocidos:
         return MaterialPageRoute(

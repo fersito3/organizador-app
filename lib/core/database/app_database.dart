@@ -71,13 +71,43 @@ class Tareas extends Table {
   IntColumn get eventoId => integer().nullable().references(Eventos, #id)();
 }
 
+// --- 5. TABLA DE ELEMENTOS PERSONALES (Notas, Listas, Metas) ---
+@DataClassName('ElementoPersonal')
+class ElementosPersonales extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get titulo => text().withLength(min: 1, max: 150)();
+  TextColumn get contenido => text().nullable()(); // Notas de texto, Alias, CBU, Enlaces
+  IntColumn get tipo => intEnum<TipoElementoPersonal>()();
+  TextColumn get categoria => text().withDefault(const Constant('General'))();
+  IntColumn get prioridad => intEnum<Prioridad>().withDefault(const Constant(1))(); // 0: baja, 1: media, 2: alta
+  BoolColumn get esFijado => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get fechaCreacion => dateTime()();
+  DateTimeColumn get fechaActualizacion => dateTime()(); // Para recargar/ordenar por modificación reciente
+
+  // Campos opcionales para Metas (Objetivos)
+  IntColumn get progresoActual => integer().nullable().withDefault(const Constant(0))();
+  IntColumn get progresoTotal => integer().nullable().withDefault(const Constant(1))();
+  DateTimeColumn get fechaObjetivo => dateTime().nullable()(); // Fecha meta límite para progreso temporal
+}
+
+// --- 6. TABLA SECUNDARIA RELACIONAL DE ÍTEMS DE LISTA (1:N) ---
+@DataClassName('ItemListaData')
+class ItemsLista extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get elementoId => integer().references(ElementosPersonales, #id, onDelete: KeyAction.cascade)();
+  TextColumn get texto => text().withLength(min: 1, max: 200)();
+  BoolColumn get completado => boolean().withDefault(const Constant(false))();
+  IntColumn get orden => integer().withDefault(const Constant(0))();
+}
+
 // --- CLASE PRINCIPAL DE LA BASE DE DATOS ---
-@DriftDatabase(tables: [Categorias, Transacciones, Eventos, Tareas, Conocidos])
+@DriftDatabase(tables: [Categorias, Transacciones, Eventos, Tareas, Conocidos, ElementosPersonales, ItemsLista])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
+  AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 5; // Incrementamos a la versión 5 para Conocidos avanzados
+  int get schemaVersion => 6; // Incrementamos a versión 6 para Espacio Personal
 
   @override
   MigrationStrategy get migration {
@@ -93,9 +123,17 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(transacciones, transacciones.contraparteMpId);
         }
         if (from < 5) {
-          // Como eliminamos destinatarioEmisor, recreamos la tabla limpia
-          await m.deleteTable('transacciones');
-          await m.createTable(transacciones);
+          // MIGRACIÓN SEGURA (DAT-01): Se elimina la recreación destructiva de la tabla transacciones.
+          try {
+            await customStatement('ALTER TABLE transacciones DROP COLUMN destinatario_emisor');
+          } catch (_) {
+            // Ignoramos si la columna no existe o si la versión de SQLite no admite DROP COLUMN.
+          }
+        }
+        if (from < 6) {
+          // MIGRACIÓN V6: Creación segura y aditiva de tablas de Espacio Personal
+          await m.createTable(elementosPersonales);
+          await m.createTable(itemsLista);
         }
       },
       beforeOpen: (details) async {

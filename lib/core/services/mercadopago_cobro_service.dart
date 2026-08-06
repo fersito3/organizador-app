@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import '../widgets/app_toast.dart';
 
 class MercadoPagoCobroService {
   static const String _remoteUrl = 'https://organizador-app-server.onrender.com/api/mercadopago/preference';
@@ -24,7 +25,7 @@ class MercadoPagoCobroService {
         Uri.parse(_remoteUrl),
         headers: headers,
         body: body,
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 45));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -37,7 +38,7 @@ class MercadoPagoCobroService {
           Uri.parse(_localUrl),
           headers: headers,
           body: body,
-        ).timeout(const Duration(seconds: 5));
+        ).timeout(const Duration(seconds: 10));
 
         if (localResponse.statusCode == 200) {
           final data = jsonDecode(localResponse.body);
@@ -158,7 +159,9 @@ class _CobroDialogState extends State<_CobroDialog> {
                   children: [
                     CircularProgressIndicator(color: Color(0xFF009EE3)),
                     SizedBox(height: 12),
-                    Text('Generando QR y link de cobro...', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                    Text('Generando QR y link de cobro...', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                    SizedBox(height: 4),
+                    Text('Conectando con el servidor (esto puede tomar unos segundos si se está iniciando)...', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)), textAlign: TextAlign.center),
                   ],
                 ),
               ),
@@ -218,13 +221,7 @@ class _CobroDialogState extends State<_CobroDialog> {
               ElevatedButton.icon(
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: _linkCobro!));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('¡Link de cobro de Mercado Pago copiado al portapapeles! 📋'),
-                      backgroundColor: Color(0xFF009EE3),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
+                  AppToast.show(context, message: 'Link de cobro copiado al portapapeles!', icon: Icons.copy_rounded);
                 },
                 icon: const Icon(Icons.copy_rounded, color: Colors.white, size: 18),
                 label: const Text('Copiar Link de Cobro', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),

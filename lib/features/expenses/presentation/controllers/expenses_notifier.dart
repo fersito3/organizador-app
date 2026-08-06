@@ -21,6 +21,21 @@ class ExpensesNotifier extends ChangeNotifier {
   // URL del backend en Render (se puede cambiar por localhost:3000 para pruebas locales)
   static const String backendUrl = 'https://organizador-app-server.onrender.com';
 
+  // Privacidad: ocultar montos
+  bool _ocultarSaldos = false;
+  bool get ocultarSaldos => _ocultarSaldos;
+  void toggleOcultarSaldos() {
+    _ocultarSaldos = !_ocultarSaldos;
+    notifyListeners();
+  }
+
+  String formatearMonto(double monto, {bool conSigno = true}) {
+    if (_ocultarSaldos) return '••••';
+    final str = monto.abs().toStringAsFixed(2);
+    if (!conSigno) return '\$$str';
+    return monto < 0 ? '-\$$str' : '\$$str';
+  }
+
   List<Transaccion> _transacciones = [];
   List<Transaccion> get transacciones => _transacciones;
 

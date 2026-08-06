@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/enums.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../controllers/add_transaction_notifier.dart';
 
 class AddTransactionScreen extends StatefulWidget {
@@ -28,11 +29,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   Future<void> _saveTransaction(AddTransactionNotifier notifier) async {
     if (!_formKey.currentState!.validate()) return;
 
-    final monto = double.tryParse(_montoController.text);
-    if (monto == null || monto <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor ingresa un monto válido mayor a 0')),
-      );
+    final rawMonto = _montoController.text.replaceAll(',', '.').trim();
+    final monto = double.tryParse(rawMonto);
+    if (monto == null || !monto.isFinite || monto <= 0) {
+      AppToast.show(context, message: 'Ingresá un monto válido mayor a 0.', isError: true);
       return;
     }
 
@@ -49,9 +49,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al guardar la transacción: $e')),
-        );
+        AppToast.show(context, message: 'Error al guardar la transacción: $e', isError: true);
       }
     }
   }
