@@ -65,6 +65,16 @@ void main() {
 
     await db.close();
   });
+
+  test('AppDatabase migration from schema < 7 creates projected adjustments table cleanly', () async {
+    final executor = NativeDatabase.memory();
+    final db = AppDatabase.forTesting(executor);
+
+    final ajustes = await db.select(db.ajustesProyectados).get();
+    expect(ajustes.isEmpty, isTrue);
+
+    await db.close();
+  });
 }
 
 class _DummyUser extends QueryExecutorUser {

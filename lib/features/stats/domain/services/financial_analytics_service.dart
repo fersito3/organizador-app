@@ -1,4 +1,5 @@
 import 'dart:math';
+import '../../../../core/database/app_database.dart';
 import '../../../../core/enums.dart';
 import '../../../expenses/domain/models/transaccion.dart';
 import '../../../expenses/domain/models/categoria_domain.dart';
@@ -10,6 +11,7 @@ class FinancialAnalyticsService {
     required List<Transaccion> transacciones,
     required List<CategoriaDomain> categorias,
     required DateTime focusedDate,
+    List<AjusteProyectado> ajustesProyectados = const [],
   }) {
     final now = DateTime.now();
 
@@ -39,9 +41,25 @@ class FinancialAnalyticsService {
 
     final balanceDisponibleMes = totalIngresosMes - totalGastosMes;
 
+    // 2.b. Ajustes Proyectados Futuros del mes
+    double ingresosFuturosPendientes = 0.0;
+    double gastosFuturosPendientes = 0.0;
+
+    for (final a in ajustesProyectados) {
+      if (!a.completado && a.fecha.year == focusedDate.year && a.fecha.month == focusedDate.month) {
+        if (a.esIngreso) {
+          ingresosFuturosPendientes += a.monto;
+        } else {
+          gastosFuturosPendientes += a.monto;
+        }
+      }
+    }
+
+    final balanceDisponibleConProyeccion = balanceDisponibleMes + ingresosFuturosPendientes - gastosFuturosPendientes;
+
     // 3. Disponible Diario Estimado
-    final disponibleDiarioEstimado = balanceDisponibleMes > 0
-        ? (balanceDisponibleMes / diasRestantes)
+    final disponibleDiarioEstimado = balanceDisponibleConProyeccion > 0
+        ? (balanceDisponibleConProyeccion / diasRestantes)
         : 0.0;
 
     // 4. Gasto de Hoy y Promedio Diario Habitual
@@ -206,6 +224,9 @@ class FinancialAnalyticsService {
       promedioHistoricoMensual: promedioHistoricoMensual,
       topCategorias: topCategorias,
       alertas: alertas,
+      ingresosFuturosPendientes: ingresosFuturosPendientes,
+      gastosFuturosPendientes: gastosFuturosPendientes,
+      balanceDisponibleConProyeccion: balanceDisponibleConProyeccion,
     );
   }
 }

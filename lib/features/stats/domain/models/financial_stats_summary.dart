@@ -33,6 +33,10 @@ class FinancialStatsSummary {
   final List<CategoryExpenseSummary> topCategorias;
   final List<FinancialAlert> alertas;
 
+  final double ingresosFuturosPendientes;
+  final double gastosFuturosPendientes;
+  final double balanceDisponibleConProyeccion;
+
   FinancialStatsSummary({
     required this.totalIngresosMes,
     required this.totalGastosMes,
@@ -49,5 +53,8 @@ class FinancialStatsSummary {
     required this.promedioHistoricoMensual,
     required this.topCategorias,
     required this.alertas,
+    this.ingresosFuturosPendientes = 0.0,
+    this.gastosFuturosPendientes = 0.0,
+    this.balanceDisponibleConProyeccion = 0.0,
   });
 }

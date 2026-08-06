@@ -1322,6 +1322,18 @@ class $EventosTable extends Eventos with TableInfo<$EventosTable, Evento> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _colorHexMeta = const VerificationMeta(
+    'colorHex',
+  );
+  @override
+  late final GeneratedColumn<String> colorHex = GeneratedColumn<String>(
+    'color_hex',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('F59E0B'),
+  );
   static const VerificationMeta _esRecurrenteMeta = const VerificationMeta(
     'esRecurrente',
   );
@@ -1370,6 +1382,7 @@ class $EventosTable extends Eventos with TableInfo<$EventosTable, Evento> {
     descripcion,
     fechaInicio,
     fechaFin,
+    colorHex,
     esRecurrente,
     patronRecurrencia,
     transaccionId,
@@ -1424,6 +1437,12 @@ class $EventosTable extends Eventos with TableInfo<$EventosTable, Evento> {
       );
     } else if (isInserting) {
       context.missing(_fechaFinMeta);
+    }
+    if (data.containsKey('color_hex')) {
+      context.handle(
+        _colorHexMeta,
+        colorHex.isAcceptableOrUnknown(data['color_hex']!, _colorHexMeta),
+      );
     }
     if (data.containsKey('es_recurrente')) {
       context.handle(
@@ -1481,6 +1500,10 @@ class $EventosTable extends Eventos with TableInfo<$EventosTable, Evento> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}fecha_fin'],
       )!,
+      colorHex: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}color_hex'],
+      )!,
       esRecurrente: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}es_recurrente'],
@@ -1508,6 +1531,7 @@ class Evento extends DataClass implements Insertable<Evento> {
   final String? descripcion;
   final DateTime fechaInicio;
   final DateTime fechaFin;
+  final String colorHex;
   final bool esRecurrente;
   final String? patronRecurrencia;
   final int? transaccionId;
@@ -1517,6 +1541,7 @@ class Evento extends DataClass implements Insertable<Evento> {
     this.descripcion,
     required this.fechaInicio,
     required this.fechaFin,
+    required this.colorHex,
     required this.esRecurrente,
     this.patronRecurrencia,
     this.transaccionId,
@@ -1531,6 +1556,7 @@ class Evento extends DataClass implements Insertable<Evento> {
     }
     map['fecha_inicio'] = Variable<DateTime>(fechaInicio);
     map['fecha_fin'] = Variable<DateTime>(fechaFin);
+    map['color_hex'] = Variable<String>(colorHex);
     map['es_recurrente'] = Variable<bool>(esRecurrente);
     if (!nullToAbsent || patronRecurrencia != null) {
       map['patron_recurrencia'] = Variable<String>(patronRecurrencia);
@@ -1550,6 +1576,7 @@ class Evento extends DataClass implements Insertable<Evento> {
           : Value(descripcion),
       fechaInicio: Value(fechaInicio),
       fechaFin: Value(fechaFin),
+      colorHex: Value(colorHex),
       esRecurrente: Value(esRecurrente),
       patronRecurrencia: patronRecurrencia == null && nullToAbsent
           ? const Value.absent()
@@ -1571,6 +1598,7 @@ class Evento extends DataClass implements Insertable<Evento> {
       descripcion: serializer.fromJson<String?>(json['descripcion']),
       fechaInicio: serializer.fromJson<DateTime>(json['fechaInicio']),
       fechaFin: serializer.fromJson<DateTime>(json['fechaFin']),
+      colorHex: serializer.fromJson<String>(json['colorHex']),
       esRecurrente: serializer.fromJson<bool>(json['esRecurrente']),
       patronRecurrencia: serializer.fromJson<String?>(
         json['patronRecurrencia'],
@@ -1587,6 +1615,7 @@ class Evento extends DataClass implements Insertable<Evento> {
       'descripcion': serializer.toJson<String?>(descripcion),
       'fechaInicio': serializer.toJson<DateTime>(fechaInicio),
       'fechaFin': serializer.toJson<DateTime>(fechaFin),
+      'colorHex': serializer.toJson<String>(colorHex),
       'esRecurrente': serializer.toJson<bool>(esRecurrente),
       'patronRecurrencia': serializer.toJson<String?>(patronRecurrencia),
       'transaccionId': serializer.toJson<int?>(transaccionId),
@@ -1599,6 +1628,7 @@ class Evento extends DataClass implements Insertable<Evento> {
     Value<String?> descripcion = const Value.absent(),
     DateTime? fechaInicio,
     DateTime? fechaFin,
+    String? colorHex,
     bool? esRecurrente,
     Value<String?> patronRecurrencia = const Value.absent(),
     Value<int?> transaccionId = const Value.absent(),
@@ -1608,6 +1638,7 @@ class Evento extends DataClass implements Insertable<Evento> {
     descripcion: descripcion.present ? descripcion.value : this.descripcion,
     fechaInicio: fechaInicio ?? this.fechaInicio,
     fechaFin: fechaFin ?? this.fechaFin,
+    colorHex: colorHex ?? this.colorHex,
     esRecurrente: esRecurrente ?? this.esRecurrente,
     patronRecurrencia: patronRecurrencia.present
         ? patronRecurrencia.value
@@ -1627,6 +1658,7 @@ class Evento extends DataClass implements Insertable<Evento> {
           ? data.fechaInicio.value
           : this.fechaInicio,
       fechaFin: data.fechaFin.present ? data.fechaFin.value : this.fechaFin,
+      colorHex: data.colorHex.present ? data.colorHex.value : this.colorHex,
       esRecurrente: data.esRecurrente.present
           ? data.esRecurrente.value
           : this.esRecurrente,
@@ -1647,6 +1679,7 @@ class Evento extends DataClass implements Insertable<Evento> {
           ..write('descripcion: $descripcion, ')
           ..write('fechaInicio: $fechaInicio, ')
           ..write('fechaFin: $fechaFin, ')
+          ..write('colorHex: $colorHex, ')
           ..write('esRecurrente: $esRecurrente, ')
           ..write('patronRecurrencia: $patronRecurrencia, ')
           ..write('transaccionId: $transaccionId')
@@ -1661,6 +1694,7 @@ class Evento extends DataClass implements Insertable<Evento> {
     descripcion,
     fechaInicio,
     fechaFin,
+    colorHex,
     esRecurrente,
     patronRecurrencia,
     transaccionId,
@@ -1674,6 +1708,7 @@ class Evento extends DataClass implements Insertable<Evento> {
           other.descripcion == this.descripcion &&
           other.fechaInicio == this.fechaInicio &&
           other.fechaFin == this.fechaFin &&
+          other.colorHex == this.colorHex &&
           other.esRecurrente == this.esRecurrente &&
           other.patronRecurrencia == this.patronRecurrencia &&
           other.transaccionId == this.transaccionId);
@@ -1685,6 +1720,7 @@ class EventosCompanion extends UpdateCompanion<Evento> {
   final Value<String?> descripcion;
   final Value<DateTime> fechaInicio;
   final Value<DateTime> fechaFin;
+  final Value<String> colorHex;
   final Value<bool> esRecurrente;
   final Value<String?> patronRecurrencia;
   final Value<int?> transaccionId;
@@ -1694,6 +1730,7 @@ class EventosCompanion extends UpdateCompanion<Evento> {
     this.descripcion = const Value.absent(),
     this.fechaInicio = const Value.absent(),
     this.fechaFin = const Value.absent(),
+    this.colorHex = const Value.absent(),
     this.esRecurrente = const Value.absent(),
     this.patronRecurrencia = const Value.absent(),
     this.transaccionId = const Value.absent(),
@@ -1704,6 +1741,7 @@ class EventosCompanion extends UpdateCompanion<Evento> {
     this.descripcion = const Value.absent(),
     required DateTime fechaInicio,
     required DateTime fechaFin,
+    this.colorHex = const Value.absent(),
     this.esRecurrente = const Value.absent(),
     this.patronRecurrencia = const Value.absent(),
     this.transaccionId = const Value.absent(),
@@ -1716,6 +1754,7 @@ class EventosCompanion extends UpdateCompanion<Evento> {
     Expression<String>? descripcion,
     Expression<DateTime>? fechaInicio,
     Expression<DateTime>? fechaFin,
+    Expression<String>? colorHex,
     Expression<bool>? esRecurrente,
     Expression<String>? patronRecurrencia,
     Expression<int>? transaccionId,
@@ -1726,6 +1765,7 @@ class EventosCompanion extends UpdateCompanion<Evento> {
       if (descripcion != null) 'descripcion': descripcion,
       if (fechaInicio != null) 'fecha_inicio': fechaInicio,
       if (fechaFin != null) 'fecha_fin': fechaFin,
+      if (colorHex != null) 'color_hex': colorHex,
       if (esRecurrente != null) 'es_recurrente': esRecurrente,
       if (patronRecurrencia != null) 'patron_recurrencia': patronRecurrencia,
       if (transaccionId != null) 'transaccion_id': transaccionId,
@@ -1738,6 +1778,7 @@ class EventosCompanion extends UpdateCompanion<Evento> {
     Value<String?>? descripcion,
     Value<DateTime>? fechaInicio,
     Value<DateTime>? fechaFin,
+    Value<String>? colorHex,
     Value<bool>? esRecurrente,
     Value<String?>? patronRecurrencia,
     Value<int?>? transaccionId,
@@ -1748,6 +1789,7 @@ class EventosCompanion extends UpdateCompanion<Evento> {
       descripcion: descripcion ?? this.descripcion,
       fechaInicio: fechaInicio ?? this.fechaInicio,
       fechaFin: fechaFin ?? this.fechaFin,
+      colorHex: colorHex ?? this.colorHex,
       esRecurrente: esRecurrente ?? this.esRecurrente,
       patronRecurrencia: patronRecurrencia ?? this.patronRecurrencia,
       transaccionId: transaccionId ?? this.transaccionId,
@@ -1772,6 +1814,9 @@ class EventosCompanion extends UpdateCompanion<Evento> {
     if (fechaFin.present) {
       map['fecha_fin'] = Variable<DateTime>(fechaFin.value);
     }
+    if (colorHex.present) {
+      map['color_hex'] = Variable<String>(colorHex.value);
+    }
     if (esRecurrente.present) {
       map['es_recurrente'] = Variable<bool>(esRecurrente.value);
     }
@@ -1792,6 +1837,7 @@ class EventosCompanion extends UpdateCompanion<Evento> {
           ..write('descripcion: $descripcion, ')
           ..write('fechaInicio: $fechaInicio, ')
           ..write('fechaFin: $fechaFin, ')
+          ..write('colorHex: $colorHex, ')
           ..write('esRecurrente: $esRecurrente, ')
           ..write('patronRecurrencia: $patronRecurrencia, ')
           ..write('transaccionId: $transaccionId')
@@ -3368,6 +3414,418 @@ class ItemsListaCompanion extends UpdateCompanion<ItemListaData> {
   }
 }
 
+class $AjustesProyectadosTable extends AjustesProyectados
+    with TableInfo<$AjustesProyectadosTable, AjusteProyectado> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AjustesProyectadosTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _descripcionMeta = const VerificationMeta(
+    'descripcion',
+  );
+  @override
+  late final GeneratedColumn<String> descripcion = GeneratedColumn<String>(
+    'descripcion',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 150,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _montoMeta = const VerificationMeta('monto');
+  @override
+  late final GeneratedColumn<double> monto = GeneratedColumn<double>(
+    'monto',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _esIngresoMeta = const VerificationMeta(
+    'esIngreso',
+  );
+  @override
+  late final GeneratedColumn<bool> esIngreso = GeneratedColumn<bool>(
+    'es_ingreso',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("es_ingreso" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _fechaMeta = const VerificationMeta('fecha');
+  @override
+  late final GeneratedColumn<DateTime> fecha = GeneratedColumn<DateTime>(
+    'fecha',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _completadoMeta = const VerificationMeta(
+    'completado',
+  );
+  @override
+  late final GeneratedColumn<bool> completado = GeneratedColumn<bool>(
+    'completado',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("completado" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    descripcion,
+    monto,
+    esIngreso,
+    fecha,
+    completado,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'ajustes_proyectados';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AjusteProyectado> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('descripcion')) {
+      context.handle(
+        _descripcionMeta,
+        descripcion.isAcceptableOrUnknown(
+          data['descripcion']!,
+          _descripcionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_descripcionMeta);
+    }
+    if (data.containsKey('monto')) {
+      context.handle(
+        _montoMeta,
+        monto.isAcceptableOrUnknown(data['monto']!, _montoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_montoMeta);
+    }
+    if (data.containsKey('es_ingreso')) {
+      context.handle(
+        _esIngresoMeta,
+        esIngreso.isAcceptableOrUnknown(data['es_ingreso']!, _esIngresoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_esIngresoMeta);
+    }
+    if (data.containsKey('fecha')) {
+      context.handle(
+        _fechaMeta,
+        fecha.isAcceptableOrUnknown(data['fecha']!, _fechaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fechaMeta);
+    }
+    if (data.containsKey('completado')) {
+      context.handle(
+        _completadoMeta,
+        completado.isAcceptableOrUnknown(data['completado']!, _completadoMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AjusteProyectado map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AjusteProyectado(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      descripcion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}descripcion'],
+      )!,
+      monto: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}monto'],
+      )!,
+      esIngreso: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}es_ingreso'],
+      )!,
+      fecha: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fecha'],
+      )!,
+      completado: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}completado'],
+      )!,
+    );
+  }
+
+  @override
+  $AjustesProyectadosTable createAlias(String alias) {
+    return $AjustesProyectadosTable(attachedDatabase, alias);
+  }
+}
+
+class AjusteProyectado extends DataClass
+    implements Insertable<AjusteProyectado> {
+  final int id;
+  final String descripcion;
+  final double monto;
+  final bool esIngreso;
+  final DateTime fecha;
+  final bool completado;
+  const AjusteProyectado({
+    required this.id,
+    required this.descripcion,
+    required this.monto,
+    required this.esIngreso,
+    required this.fecha,
+    required this.completado,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['descripcion'] = Variable<String>(descripcion);
+    map['monto'] = Variable<double>(monto);
+    map['es_ingreso'] = Variable<bool>(esIngreso);
+    map['fecha'] = Variable<DateTime>(fecha);
+    map['completado'] = Variable<bool>(completado);
+    return map;
+  }
+
+  AjustesProyectadosCompanion toCompanion(bool nullToAbsent) {
+    return AjustesProyectadosCompanion(
+      id: Value(id),
+      descripcion: Value(descripcion),
+      monto: Value(monto),
+      esIngreso: Value(esIngreso),
+      fecha: Value(fecha),
+      completado: Value(completado),
+    );
+  }
+
+  factory AjusteProyectado.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AjusteProyectado(
+      id: serializer.fromJson<int>(json['id']),
+      descripcion: serializer.fromJson<String>(json['descripcion']),
+      monto: serializer.fromJson<double>(json['monto']),
+      esIngreso: serializer.fromJson<bool>(json['esIngreso']),
+      fecha: serializer.fromJson<DateTime>(json['fecha']),
+      completado: serializer.fromJson<bool>(json['completado']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'descripcion': serializer.toJson<String>(descripcion),
+      'monto': serializer.toJson<double>(monto),
+      'esIngreso': serializer.toJson<bool>(esIngreso),
+      'fecha': serializer.toJson<DateTime>(fecha),
+      'completado': serializer.toJson<bool>(completado),
+    };
+  }
+
+  AjusteProyectado copyWith({
+    int? id,
+    String? descripcion,
+    double? monto,
+    bool? esIngreso,
+    DateTime? fecha,
+    bool? completado,
+  }) => AjusteProyectado(
+    id: id ?? this.id,
+    descripcion: descripcion ?? this.descripcion,
+    monto: monto ?? this.monto,
+    esIngreso: esIngreso ?? this.esIngreso,
+    fecha: fecha ?? this.fecha,
+    completado: completado ?? this.completado,
+  );
+  AjusteProyectado copyWithCompanion(AjustesProyectadosCompanion data) {
+    return AjusteProyectado(
+      id: data.id.present ? data.id.value : this.id,
+      descripcion: data.descripcion.present
+          ? data.descripcion.value
+          : this.descripcion,
+      monto: data.monto.present ? data.monto.value : this.monto,
+      esIngreso: data.esIngreso.present ? data.esIngreso.value : this.esIngreso,
+      fecha: data.fecha.present ? data.fecha.value : this.fecha,
+      completado: data.completado.present
+          ? data.completado.value
+          : this.completado,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AjusteProyectado(')
+          ..write('id: $id, ')
+          ..write('descripcion: $descripcion, ')
+          ..write('monto: $monto, ')
+          ..write('esIngreso: $esIngreso, ')
+          ..write('fecha: $fecha, ')
+          ..write('completado: $completado')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, descripcion, monto, esIngreso, fecha, completado);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AjusteProyectado &&
+          other.id == this.id &&
+          other.descripcion == this.descripcion &&
+          other.monto == this.monto &&
+          other.esIngreso == this.esIngreso &&
+          other.fecha == this.fecha &&
+          other.completado == this.completado);
+}
+
+class AjustesProyectadosCompanion extends UpdateCompanion<AjusteProyectado> {
+  final Value<int> id;
+  final Value<String> descripcion;
+  final Value<double> monto;
+  final Value<bool> esIngreso;
+  final Value<DateTime> fecha;
+  final Value<bool> completado;
+  const AjustesProyectadosCompanion({
+    this.id = const Value.absent(),
+    this.descripcion = const Value.absent(),
+    this.monto = const Value.absent(),
+    this.esIngreso = const Value.absent(),
+    this.fecha = const Value.absent(),
+    this.completado = const Value.absent(),
+  });
+  AjustesProyectadosCompanion.insert({
+    this.id = const Value.absent(),
+    required String descripcion,
+    required double monto,
+    required bool esIngreso,
+    required DateTime fecha,
+    this.completado = const Value.absent(),
+  }) : descripcion = Value(descripcion),
+       monto = Value(monto),
+       esIngreso = Value(esIngreso),
+       fecha = Value(fecha);
+  static Insertable<AjusteProyectado> custom({
+    Expression<int>? id,
+    Expression<String>? descripcion,
+    Expression<double>? monto,
+    Expression<bool>? esIngreso,
+    Expression<DateTime>? fecha,
+    Expression<bool>? completado,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (descripcion != null) 'descripcion': descripcion,
+      if (monto != null) 'monto': monto,
+      if (esIngreso != null) 'es_ingreso': esIngreso,
+      if (fecha != null) 'fecha': fecha,
+      if (completado != null) 'completado': completado,
+    });
+  }
+
+  AjustesProyectadosCompanion copyWith({
+    Value<int>? id,
+    Value<String>? descripcion,
+    Value<double>? monto,
+    Value<bool>? esIngreso,
+    Value<DateTime>? fecha,
+    Value<bool>? completado,
+  }) {
+    return AjustesProyectadosCompanion(
+      id: id ?? this.id,
+      descripcion: descripcion ?? this.descripcion,
+      monto: monto ?? this.monto,
+      esIngreso: esIngreso ?? this.esIngreso,
+      fecha: fecha ?? this.fecha,
+      completado: completado ?? this.completado,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (descripcion.present) {
+      map['descripcion'] = Variable<String>(descripcion.value);
+    }
+    if (monto.present) {
+      map['monto'] = Variable<double>(monto.value);
+    }
+    if (esIngreso.present) {
+      map['es_ingreso'] = Variable<bool>(esIngreso.value);
+    }
+    if (fecha.present) {
+      map['fecha'] = Variable<DateTime>(fecha.value);
+    }
+    if (completado.present) {
+      map['completado'] = Variable<bool>(completado.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AjustesProyectadosCompanion(')
+          ..write('id: $id, ')
+          ..write('descripcion: $descripcion, ')
+          ..write('monto: $monto, ')
+          ..write('esIngreso: $esIngreso, ')
+          ..write('fecha: $fecha, ')
+          ..write('completado: $completado')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3379,6 +3837,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ElementosPersonalesTable elementosPersonales =
       $ElementosPersonalesTable(this);
   late final $ItemsListaTable itemsLista = $ItemsListaTable(this);
+  late final $AjustesProyectadosTable ajustesProyectados =
+      $AjustesProyectadosTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3391,6 +3851,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     tareas,
     elementosPersonales,
     itemsLista,
+    ajustesProyectados,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -4577,6 +5038,7 @@ typedef $$EventosTableCreateCompanionBuilder =
       Value<String?> descripcion,
       required DateTime fechaInicio,
       required DateTime fechaFin,
+      Value<String> colorHex,
       Value<bool> esRecurrente,
       Value<String?> patronRecurrencia,
       Value<int?> transaccionId,
@@ -4588,6 +5050,7 @@ typedef $$EventosTableUpdateCompanionBuilder =
       Value<String?> descripcion,
       Value<DateTime> fechaInicio,
       Value<DateTime> fechaFin,
+      Value<String> colorHex,
       Value<bool> esRecurrente,
       Value<String?> patronRecurrencia,
       Value<int?> transaccionId,
@@ -4666,6 +5129,11 @@ class $$EventosTableFilterComposer
 
   ColumnFilters<DateTime> get fechaFin => $composableBuilder(
     column: $table.fechaFin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get colorHex => $composableBuilder(
+    column: $table.colorHex,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4762,6 +5230,11 @@ class $$EventosTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get colorHex => $composableBuilder(
+    column: $table.colorHex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get esRecurrente => $composableBuilder(
     column: $table.esRecurrente,
     builder: (column) => ColumnOrderings(column),
@@ -4823,6 +5296,9 @@ class $$EventosTableAnnotationComposer
 
   GeneratedColumn<DateTime> get fechaFin =>
       $composableBuilder(column: $table.fechaFin, builder: (column) => column);
+
+  GeneratedColumn<String> get colorHex =>
+      $composableBuilder(column: $table.colorHex, builder: (column) => column);
 
   GeneratedColumn<bool> get esRecurrente => $composableBuilder(
     column: $table.esRecurrente,
@@ -4916,6 +5392,7 @@ class $$EventosTableTableManager
                 Value<String?> descripcion = const Value.absent(),
                 Value<DateTime> fechaInicio = const Value.absent(),
                 Value<DateTime> fechaFin = const Value.absent(),
+                Value<String> colorHex = const Value.absent(),
                 Value<bool> esRecurrente = const Value.absent(),
                 Value<String?> patronRecurrencia = const Value.absent(),
                 Value<int?> transaccionId = const Value.absent(),
@@ -4925,6 +5402,7 @@ class $$EventosTableTableManager
                 descripcion: descripcion,
                 fechaInicio: fechaInicio,
                 fechaFin: fechaFin,
+                colorHex: colorHex,
                 esRecurrente: esRecurrente,
                 patronRecurrencia: patronRecurrencia,
                 transaccionId: transaccionId,
@@ -4936,6 +5414,7 @@ class $$EventosTableTableManager
                 Value<String?> descripcion = const Value.absent(),
                 required DateTime fechaInicio,
                 required DateTime fechaFin,
+                Value<String> colorHex = const Value.absent(),
                 Value<bool> esRecurrente = const Value.absent(),
                 Value<String?> patronRecurrencia = const Value.absent(),
                 Value<int?> transaccionId = const Value.absent(),
@@ -4945,6 +5424,7 @@ class $$EventosTableTableManager
                 descripcion: descripcion,
                 fechaInicio: fechaInicio,
                 fechaFin: fechaFin,
+                colorHex: colorHex,
                 esRecurrente: esRecurrente,
                 patronRecurrencia: patronRecurrencia,
                 transaccionId: transaccionId,
@@ -6157,6 +6637,236 @@ typedef $$ItemsListaTableProcessedTableManager =
       ItemListaData,
       PrefetchHooks Function({bool elementoId})
     >;
+typedef $$AjustesProyectadosTableCreateCompanionBuilder =
+    AjustesProyectadosCompanion Function({
+      Value<int> id,
+      required String descripcion,
+      required double monto,
+      required bool esIngreso,
+      required DateTime fecha,
+      Value<bool> completado,
+    });
+typedef $$AjustesProyectadosTableUpdateCompanionBuilder =
+    AjustesProyectadosCompanion Function({
+      Value<int> id,
+      Value<String> descripcion,
+      Value<double> monto,
+      Value<bool> esIngreso,
+      Value<DateTime> fecha,
+      Value<bool> completado,
+    });
+
+class $$AjustesProyectadosTableFilterComposer
+    extends Composer<_$AppDatabase, $AjustesProyectadosTable> {
+  $$AjustesProyectadosTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get descripcion => $composableBuilder(
+    column: $table.descripcion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get monto => $composableBuilder(
+    column: $table.monto,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get esIngreso => $composableBuilder(
+    column: $table.esIngreso,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get fecha => $composableBuilder(
+    column: $table.fecha,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get completado => $composableBuilder(
+    column: $table.completado,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AjustesProyectadosTableOrderingComposer
+    extends Composer<_$AppDatabase, $AjustesProyectadosTable> {
+  $$AjustesProyectadosTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get descripcion => $composableBuilder(
+    column: $table.descripcion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get monto => $composableBuilder(
+    column: $table.monto,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get esIngreso => $composableBuilder(
+    column: $table.esIngreso,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get fecha => $composableBuilder(
+    column: $table.fecha,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get completado => $composableBuilder(
+    column: $table.completado,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AjustesProyectadosTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AjustesProyectadosTable> {
+  $$AjustesProyectadosTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get descripcion => $composableBuilder(
+    column: $table.descripcion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get monto =>
+      $composableBuilder(column: $table.monto, builder: (column) => column);
+
+  GeneratedColumn<bool> get esIngreso =>
+      $composableBuilder(column: $table.esIngreso, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get fecha =>
+      $composableBuilder(column: $table.fecha, builder: (column) => column);
+
+  GeneratedColumn<bool> get completado => $composableBuilder(
+    column: $table.completado,
+    builder: (column) => column,
+  );
+}
+
+class $$AjustesProyectadosTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AjustesProyectadosTable,
+          AjusteProyectado,
+          $$AjustesProyectadosTableFilterComposer,
+          $$AjustesProyectadosTableOrderingComposer,
+          $$AjustesProyectadosTableAnnotationComposer,
+          $$AjustesProyectadosTableCreateCompanionBuilder,
+          $$AjustesProyectadosTableUpdateCompanionBuilder,
+          (
+            AjusteProyectado,
+            BaseReferences<
+              _$AppDatabase,
+              $AjustesProyectadosTable,
+              AjusteProyectado
+            >,
+          ),
+          AjusteProyectado,
+          PrefetchHooks Function()
+        > {
+  $$AjustesProyectadosTableTableManager(
+    _$AppDatabase db,
+    $AjustesProyectadosTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AjustesProyectadosTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AjustesProyectadosTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AjustesProyectadosTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> descripcion = const Value.absent(),
+                Value<double> monto = const Value.absent(),
+                Value<bool> esIngreso = const Value.absent(),
+                Value<DateTime> fecha = const Value.absent(),
+                Value<bool> completado = const Value.absent(),
+              }) => AjustesProyectadosCompanion(
+                id: id,
+                descripcion: descripcion,
+                monto: monto,
+                esIngreso: esIngreso,
+                fecha: fecha,
+                completado: completado,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String descripcion,
+                required double monto,
+                required bool esIngreso,
+                required DateTime fecha,
+                Value<bool> completado = const Value.absent(),
+              }) => AjustesProyectadosCompanion.insert(
+                id: id,
+                descripcion: descripcion,
+                monto: monto,
+                esIngreso: esIngreso,
+                fecha: fecha,
+                completado: completado,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AjustesProyectadosTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AjustesProyectadosTable,
+      AjusteProyectado,
+      $$AjustesProyectadosTableFilterComposer,
+      $$AjustesProyectadosTableOrderingComposer,
+      $$AjustesProyectadosTableAnnotationComposer,
+      $$AjustesProyectadosTableCreateCompanionBuilder,
+      $$AjustesProyectadosTableUpdateCompanionBuilder,
+      (
+        AjusteProyectado,
+        BaseReferences<
+          _$AppDatabase,
+          $AjustesProyectadosTable,
+          AjusteProyectado
+        >,
+      ),
+      AjusteProyectado,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6175,4 +6885,6 @@ class $AppDatabaseManager {
       $$ElementosPersonalesTableTableManager(_db, _db.elementosPersonales);
   $$ItemsListaTableTableManager get itemsLista =>
       $$ItemsListaTableTableManager(_db, _db.itemsLista);
+  $$AjustesProyectadosTableTableManager get ajustesProyectados =>
+      $$AjustesProyectadosTableTableManager(_db, _db.ajustesProyectados);
 }

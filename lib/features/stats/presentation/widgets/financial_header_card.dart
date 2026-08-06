@@ -67,6 +67,19 @@ class FinancialHeaderCard extends StatelessWidget {
               letterSpacing: -0.5,
             ),
           ),
+          if (summary.ingresosFuturosPendientes > 0 || summary.gastosFuturosPendientes > 0) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(Icons.event_repeat_rounded, size: 14, color: Color(0xFF818CF8)),
+                const SizedBox(width: 4),
+                Text(
+                  'Con proyecciones futuras: ${formatCurrency(summary.balanceDisponibleConProyeccion)}',
+                  style: const TextStyle(color: Color(0xFF818CF8), fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(12),

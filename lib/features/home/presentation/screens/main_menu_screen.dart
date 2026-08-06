@@ -60,22 +60,22 @@ class MainMenuScreen extends StatelessWidget {
                         ),
                         _buildMenuCard(
                           context: context,
-                          title: 'Calendario',
-                          subtitle: 'Clases y Horarios',
-                          icon: Icons.calendar_today_rounded,
-                          startColor: const Color(0xFF8B5CF6),
-                          endColor: const Color(0xFF6D28D9),
-                          route: AppRoutes.routeCalendar,
-                          arguments: 0,
-                        ),
-                        _buildMenuCard(
-                          context: context,
                           title: 'Espacio Personal',
                           subtitle: 'Notas, Listas y Objetivos',
                           icon: Icons.lightbulb_outline_rounded,
                           startColor: const Color(0xFF6366F1), // Indigo
                           endColor: const Color(0xFF4338CA),
                           route: AppRoutes.routePersonalSpace,
+                        ),
+                        _buildMenuCard(
+                          context: context,
+                          title: 'Calendario',
+                          subtitle: 'Clases y Horarios',
+                          icon: Icons.calendar_today_rounded,
+                          startColor: const Color(0xFFF59E0B), // Anaranjado
+                          endColor: const Color(0xFFD97706),
+                          route: AppRoutes.routeCalendar,
+                          arguments: 0,
                         ),
                         _buildMenuCard(
                           context: context,

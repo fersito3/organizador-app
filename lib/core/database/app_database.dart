@@ -50,6 +50,7 @@ class Eventos extends Table {
   TextColumn get descripcion => text().nullable()();
   DateTimeColumn get fechaInicio => dateTime()();
   DateTimeColumn get fechaFin => dateTime()();
+  TextColumn get colorHex => text().withDefault(const Constant('F59E0B'))(); // Color anaranjado por defecto
   
   // Soporte para Horarios Semanales y Clases Recurrentes
   BoolColumn get esRecurrente => boolean().withDefault(const Constant(false))();
@@ -100,14 +101,25 @@ class ItemsLista extends Table {
   IntColumn get orden => integer().withDefault(const Constant(0))();
 }
 
+// --- 7. TABLA DE AJUSTES PROYECTADOS FUTUROS EN ESTADÍSTICAS ---
+@DataClassName('AjusteProyectado')
+class AjustesProyectados extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get descripcion => text().withLength(min: 1, max: 150)();
+  RealColumn get monto => real()();
+  BoolColumn get esIngreso => boolean()(); // true = ingreso futuro, false = gasto futuro
+  DateTimeColumn get fecha => dateTime()();
+  BoolColumn get completado => boolean().withDefault(const Constant(false))(); // true = pagado/recibido
+}
+
 // --- CLASE PRINCIPAL DE LA BASE DE DATOS ---
-@DriftDatabase(tables: [Categorias, Transacciones, Eventos, Tareas, Conocidos, ElementosPersonales, ItemsLista])
+@DriftDatabase(tables: [Categorias, Transacciones, Eventos, Tareas, Conocidos, ElementosPersonales, ItemsLista, AjustesProyectados])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 6; // Incrementamos a versión 6 para Espacio Personal
+  int get schemaVersion => 7; // Incrementamos a versión 7 para colorHex en Eventos y AjustesProyectados
 
   @override
   MigrationStrategy get migration {
@@ -135,6 +147,11 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(elementosPersonales);
           await m.createTable(itemsLista);
         }
+        if (from < 7) {
+          // MIGRACIÓN V7: Creación segura y aditiva de columna colorHex en Eventos y tabla AjustesProyectados
+          await m.addColumn(eventos, eventos.colorHex);
+          await m.createTable(ajustesProyectados);
+        }
       },
       beforeOpen: (details) async {
         // Habilitar claves foráneas en SQLite
@@ -158,12 +175,41 @@ class AppDatabase extends _$AppDatabase {
     }
 
     await insertarSiNoExiste('Comida', 'FF9800', TipoTransaccion.egreso);
-    await insertarSiNoExiste('Facultad', '2196F3', TipoTransaccion.egreso);
-    await insertarSiNoExiste('Transporte', '4CAF50', TipoTransaccion.egreso);
-    await insertarSiNoExiste('Varios', '9C27B0', TipoTransaccion.egreso);
-    await insertarSiNoExiste('Ingreso/Sueldo', '009688', TipoTransaccion.ingreso);
-    await insertarSiNoExiste('Amigos', 'E91E63', TipoTransaccion.egreso); // Rosa/Amigos
-    await insertarSiNoExiste('Farmacia', '00BCD4', TipoTransaccion.egreso); // Cyan/Farmacia
+    await insertarSiNoExiste('Comida', 'FF9800', TipoTransaccion.egreso);
+    await insertarSiNoExiste('Transporte', '2196F3', TipoTransaccion.egreso);
+    await insertarSiNoExiste('Servicios', '9C27B0', TipoTransaccion.egreso);
+    await insertarSiNoExiste('Sueldo', '4CAF50', TipoTransaccion.ingreso);
+    await insertarSiNoExiste('Varios', '9E9E9E', TipoTransaccion.egreso);
+  }
+
+  // --- MÉTODOS DE AJUSTES PROYECTADOS FUTUROS ---
+  Stream<List<AjusteProyectado>> watchAjustesProyectados() {
+    return (select(ajustesProyectados)..orderBy([(a) => OrderingTerm.asc(a.fecha)])).watch();
+  }
+
+  Future<int> agregarAjusteProyectado({
+    required String descripcion,
+    required double monto,
+    required bool esIngreso,
+    required DateTime fecha,
+  }) {
+    return into(ajustesProyectados).insert(
+      AjustesProyectadosCompanion.insert(
+        descripcion: descripcion,
+        monto: monto,
+        esIngreso: esIngreso,
+        fecha: fecha,
+      ),
+    );
+  }
+
+  Future<void> alternarCompletadoAjusteProyectado(int id, bool completado) {
+    return (update(ajustesProyectados)..where((a) => a.id.equals(id)))
+        .write(AjustesProyectadosCompanion(completado: Value(completado)));
+  }
+
+  Future<void> eliminarAjusteProyectado(int id) {
+    return (delete(ajustesProyectados)..where((a) => a.id.equals(id))).go();
   }
 
   Future<void> inicializarConocidosBase() async {

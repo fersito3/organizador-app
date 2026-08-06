@@ -119,9 +119,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
             onPressed: () => Navigator.pop(context),
           ),
           bottom: const TabBar(
-            labelColor: Color(0xFF8B5CF6),
+            labelColor: Color(0xFFF59E0B),
             unselectedLabelColor: Color(0xFF64748B),
-            indicatorColor: Color(0xFF8B5CF6),
+            indicatorColor: Color(0xFFF59E0B),
             indicatorWeight: 3,
             labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             tabs: [
@@ -1525,6 +1525,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
+  static Color _parseColorHex(String? hex) {
+    if (hex == null || hex.isEmpty) return const Color(0xFFF59E0B);
+    try {
+      final clean = hex.replaceAll('#', '');
+      if (clean.length == 6) {
+        return Color(int.parse('FF$clean', radix: 16));
+      } else if (clean.length == 8) {
+        return Color(int.parse(clean, radix: 16));
+      }
+    } catch (_) {}
+    return const Color(0xFFF59E0B);
+  }
+
   Widget _buildEventoCard(
     BuildContext context,
     Evento e,
@@ -1541,13 +1554,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final horaStr = '${e.fechaInicio.hour.toString().padLeft(2, '0')}:${e.fechaInicio.minute.toString().padLeft(2, '0')} - '
         '${e.fechaFin.hour.toString().padLeft(2, '0')}:${e.fechaFin.minute.toString().padLeft(2, '0')}';
 
+    final eventColor = _parseColorHex(e.colorHex);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: const Border(
-          left: BorderSide(color: Color(0xFF8B5CF6), width: 5),
+        border: Border(
+          left: BorderSide(color: eventColor, width: 5),
         ),
       ),
       child: ListTile(
@@ -1800,6 +1815,30 @@ class _AddEventModalState extends State<_AddEventModal> {
 
   bool _esRecurrente = false;
   int? _selectedTransaccionId;
+  String _selectedColorHex = 'F59E0B';
+
+  static const List<String> _paletaColores = [
+    'F59E0B', // Anaranjado
+    '6366F1', // Indigo
+    '10B981', // Esmeralda
+    'EC4899', // Rosa
+    '0EA5E9', // Sky Blue
+    '8B5CF6', // Violeta
+    'EF4444', // Rojo
+  ];
+
+  Color _parseColorHex(String? hex) {
+    if (hex == null || hex.isEmpty) return const Color(0xFFF59E0B);
+    try {
+      final clean = hex.replaceAll('#', '');
+      if (clean.length == 6) {
+        return Color(int.parse('FF$clean', radix: 16));
+      } else if (clean.length == 8) {
+        return Color(int.parse(clean, radix: 16));
+      }
+    } catch (_) {}
+    return const Color(0xFFF59E0B);
+  }
 
   @override
   void initState() {
@@ -1813,6 +1852,7 @@ class _AddEventModalState extends State<_AddEventModal> {
       _horaFin = TimeOfDay(hour: e.fechaFin.hour, minute: e.fechaFin.minute);
       _esRecurrente = e.esRecurrente;
       _selectedTransaccionId = e.transaccionId;
+      _selectedColorHex = e.colorHex;
     } else {
       final startH = widget.initialHour ?? 9;
       _horaInicio = TimeOfDay(hour: startH, minute: 0);
@@ -2009,42 +2049,70 @@ class _AddEventModalState extends State<_AddEventModal> {
                       });
                     },
                   ),
-                  const SizedBox(height: 24),
-
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
-                        final baseDate = _fechaSeleccionada;
-                        final start = DateTime(
-                          baseDate.year,
-                          baseDate.month,
-                          baseDate.day,
-                          _horaInicio.hour,
-                          _horaInicio.minute,
+                    const SizedBox(height: 16),
+                    const Text('Color del Evento', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: _paletaColores.map((colorHex) {
+                        final color = _parseColorHex(colorHex);
+                        final isSelected = _selectedColorHex.toUpperCase() == colorHex.toUpperCase();
+                        return GestureDetector(
+                          onTap: () => setState(() => _selectedColorHex = colorHex),
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                              border: isSelected ? Border.all(color: const Color(0xFF0F172A), width: 2.5) : null,
+                              boxShadow: [
+                                if (isSelected)
+                                  BoxShadow(color: color.withOpacity(0.4), blurRadius: 6, offset: const Offset(0, 2)),
+                              ],
+                            ),
+                            child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 18) : null,
+                          ),
                         );
-                        final end = DateTime(
-                          baseDate.year,
-                          baseDate.month,
-                          baseDate.day,
-                          _horaFin.hour,
-                          _horaFin.minute,
-                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
 
-                        if (end.isBefore(start)) {
-                          AppToast.show(context, message: 'La hora de fin debe ser posterior a la de inicio.', isError: true);
-                          return;
-                        }
+                    ElevatedButton(
+                      onPressed: () async {
+                        if (_formKey.currentState!.validate()) {
+                          final baseDate = _fechaSeleccionada;
+                          final start = DateTime(
+                            baseDate.year,
+                            baseDate.month,
+                            baseDate.day,
+                            _horaInicio.hour,
+                            _horaInicio.minute,
+                          );
+                          final end = DateTime(
+                            baseDate.year,
+                            baseDate.month,
+                            baseDate.day,
+                            _horaFin.hour,
+                            _horaFin.minute,
+                          );
 
-                        final companion = EventosCompanion(
-                          id: esEdicion ? drift.Value(widget.eventoToEdit!.id) : const drift.Value.absent(),
-                          titulo: drift.Value(_tituloController.text.trim()),
-                          descripcion: drift.Value(_descripcionController.text.trim()),
-                          fechaInicio: drift.Value(start),
-                          fechaFin: drift.Value(end),
-                          esRecurrente: drift.Value(_esRecurrente),
-                          patronRecurrencia: drift.Value(_esRecurrente ? 'WEEKLY' : null),
-                          transaccionId: drift.Value(_selectedTransaccionId),
-                        );
+                          if (end.isBefore(start)) {
+                            AppToast.show(context, message: 'La hora de fin debe ser posterior a la de inicio.', isError: true);
+                            return;
+                          }
+
+                          final companion = EventosCompanion(
+                            id: esEdicion ? drift.Value(widget.eventoToEdit!.id) : const drift.Value.absent(),
+                            titulo: drift.Value(_tituloController.text.trim()),
+                            descripcion: drift.Value(_descripcionController.text.trim()),
+                            fechaInicio: drift.Value(start),
+                            fechaFin: drift.Value(end),
+                            colorHex: drift.Value(_selectedColorHex),
+                            esRecurrente: drift.Value(_esRecurrente),
+                            patronRecurrencia: drift.Value(_esRecurrente ? 'WEEKLY' : null),
+                            transaccionId: drift.Value(_selectedTransaccionId),
+                          );
 
                         await widget.notifier.guardarEvento(companion);
 
