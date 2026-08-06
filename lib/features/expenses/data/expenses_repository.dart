@@ -116,10 +116,15 @@ class ExpensesRepository implements IExpensesRepository {
       final existing = result.isNotEmpty ? result.first : null;
 
       if (existing != null) {
-        debugPrint('   -> Registro ya existente en BBDD local: txId=${existing.id}, conocidoIdActual=${existing.conocidoId}, contraparteActual="${existing.contraparteMpId}"');
+        debugPrint('   -> Registro ya existente en BBDD local: txId=${existing.id}, conocidoIdActual=${existing.conocidoId}, contraparteActual="${existing.contraparteMpId}", categoriaIdActual=${existing.categoriaId}');
       } else {
         debugPrint('   -> Nueva transacción a insertar.');
       }
+
+      // Preservar la categoría si la transacción ya existía previamente en la BDD local
+      final int categoriaFinalId = existing != null
+          ? existing.categoriaId
+          : ((item.categoriaId > 0) ? item.categoriaId : catFallbackId);
 
       // 1. Determinar el conocidoId final (preservar conocidoId si la transacción ya lo tenía guardado)
       int? conocidoId = item.conocidoId ?? existing?.conocidoId;
@@ -166,7 +171,7 @@ class ExpensesRepository implements IExpensesRepository {
         finalDesc = item.descripcion;
       }
 
-      // 5. Inserción o Actualización en BDD
+      // 5. Inserción o Actualización en BDD (preservando la categoría elegida por el usuario)
       if (existing == null) {
         await db.into(db.transacciones).insert(
               TransaccionesCompanion.insert(
@@ -183,17 +188,15 @@ class ExpensesRepository implements IExpensesRepository {
             );
         debugPrint('   -> Insertada transacción nueva en BBDD local.');
       } else {
-        // Auto-curación de transacciones guardadas previamente
+        // Auto-curación de transacciones guardadas previamente (sin sobreescribir la categoría editada)
         if (existing.tipo != item.tipo || 
             existing.descripcion != finalDesc ||
             existing.conocidoId != conocidoId ||
-            existing.categoriaId != categoriaFinalId ||
             existing.contraparteMpId != cleanContraparteMpId) {
           await (db.update(db.transacciones)..where((t) => t.id.equals(existing.id)))
             .write(TransaccionesCompanion(
               tipo: Value(item.tipo),
               descripcion: Value(finalDesc),
-              categoriaId: Value(categoriaFinalId),
               conocidoId: Value(conocidoId),
               contraparteMpId: Value(cleanContraparteMpId),
             ));
