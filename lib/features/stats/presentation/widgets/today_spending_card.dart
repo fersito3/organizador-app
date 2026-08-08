@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/financial_stats_summary.dart';
 
 class TodaySpendingCard extends StatelessWidget {
@@ -17,30 +18,40 @@ class TodaySpendingCard extends StatelessWidget {
     final promDiario = summary.gastoPromedioDiarioHabitual;
     final esMayorAlPromedio = promDiario > 0 && gastoHoy > promDiario;
 
+    final isDark = AppColors.isDarkMode(context);
+    final cardBg = AppColors.cardBackground(context);
+    final textPrimary = AppColors.textPrimary(context);
+    final textSecondary = AppColors.textSecondary(context);
+    final borderColor = AppColors.borderColor(context);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: borderColor),
+        boxShadow: isDark
+            ? []
+            : const [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 6,
+                  offset: Offset(0, 2),
+                ),
+              ],
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 20,
             backgroundColor: esMayorAlPromedio
-                ? const Color(0xFFFEF3C7) // Amber 100
-                : const Color(0xFFECFDF5), // Emerald 100
+                ? (isDark ? const Color(0xFF78350F) : const Color(0xFFFEF3C7))
+                : (isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5)),
             child: Icon(
               Icons.shopping_bag_outlined,
-              color: esMayorAlPromedio ? const Color(0xFFD97706) : const Color(0xFF10B981),
+              color: esMayorAlPromedio
+                  ? (isDark ? const Color(0xFFFBBF24) : const Color(0xFFD97706))
+                  : (isDark ? const Color(0xFF34D399) : const Color(0xFF10B981)),
               size: 20,
             ),
           ),
@@ -49,14 +60,14 @@ class TodaySpendingCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Gasto Registrado Hoy',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                  style: TextStyle(fontSize: 12, color: textSecondary, fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   formatCurrency(gastoHoy, conSigno: false),
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textPrimary),
                 ),
               ],
             ),
@@ -64,11 +75,11 @@ class TodaySpendingCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              const Text('Promedio Diario', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+              Text('Promedio Diario', style: TextStyle(fontSize: 11, color: textSecondary)),
               const SizedBox(height: 2),
               Text(
                 formatCurrency(promDiario, conSigno: false),
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: textPrimary),
               ),
             ],
           ),

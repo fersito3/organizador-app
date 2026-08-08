@@ -10,6 +10,9 @@ import '../../domain/usecases/get_transactions_usecase.dart';
 import '../../domain/usecases/get_categories_usecase.dart';
 import '../../domain/models/conocido.dart';
 
+import '../../../../core/settings/settings_model.dart';
+import '../../../../core/utils/formatters.dart';
+
 class ExpensesNotifier extends ChangeNotifier {
   final GetTransactionsUseCase _getTransactionsUseCase;
   final GetCategoriesUseCase _getCategoriesUseCase;
@@ -29,12 +32,11 @@ class ExpensesNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  String formatearMonto(double monto, {bool conSigno = true}) {
+  String formatearMonto(double monto, {bool conSigno = true, AppCurrency currency = AppCurrency.ars}) {
     if (_ocultarSaldos) return '••••';
-    final str = monto.abs().toStringAsFixed(2);
-    if (!conSigno) return '\$$str';
-    return monto < 0 ? '-\$$str' : '\$$str';
+    return AppFormatters.formatCurrency(monto, currency, showSign: conSigno);
   }
+
 
   List<Transaccion> _transacciones = [];
   List<Transaccion> get transacciones => _transacciones;

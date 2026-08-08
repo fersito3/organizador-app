@@ -20,6 +20,134 @@ class FutureAdjustmentsModal extends StatefulWidget {
     );
   }
 
+  static void showAddDialog(BuildContext context, DateTime focusedDate) {
+    final db = Provider.of<AppDatabase>(context, listen: false);
+    final formKey = GlobalKey<FormState>();
+    final descCtrl = TextEditingController();
+    final montoCtrl = TextEditingController();
+    bool esIngreso = false;
+    DateTime fechaEstimada = focusedDate;
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Text('Nuevo Ajuste Proyectado', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: descCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Concepto (ej: Cobro cliente, Alquiler)',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Ingresá un concepto' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: montoCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        labelText: r'Monto ($)',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Ingresá un monto';
+                        final val = double.tryParse(v.replaceAll(',', '.'));
+                        if (val == null || !val.isFinite || val <= 0) return 'Monto inválido';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ChoiceChip(
+                            label: const Text('Gasto / Deuda (-)'),
+                            selected: !esIngreso,
+                            selectedColor: const Color(0xFFFEE2E2),
+                            labelStyle: TextStyle(
+                              color: !esIngreso ? const Color(0xFFEF4444) : const Color(0xFF64748B),
+                              fontWeight: FontWeight.bold,
+                            ),
+                            onSelected: (val) => setDialogState(() => esIngreso = !val),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ChoiceChip(
+                            label: const Text('Ingreso (+)'),
+                            selected: esIngreso,
+                            selectedColor: const Color(0xFFD1FAE5),
+                            labelStyle: TextStyle(
+                              color: esIngreso ? const Color(0xFF10B981) : const Color(0xFF64748B),
+                              fontWeight: FontWeight.bold,
+                            ),
+                            onSelected: (val) => setDialogState(() => esIngreso = val),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: fechaEstimada,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2100),
+                        );
+                        if (picked != null) {
+                          setDialogState(() => fechaEstimada = picked);
+                        }
+                      },
+                      icon: const Icon(Icons.calendar_month_rounded, size: 18),
+                      label: Text('Fecha: ${fechaEstimada.day}/${fechaEstimada.month}/${fechaEstimada.year}'),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (formKey.currentState!.validate()) {
+                      final raw = montoCtrl.text.replaceAll(',', '.').trim();
+                      final monto = double.parse(raw);
+
+                      await db.agregarAjusteProyectado(
+                        descripcion: descCtrl.text.trim(),
+                        monto: monto,
+                        esIngreso: esIngreso,
+                        fecha: fechaEstimada,
+                      );
+
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      if (context.mounted) {
+                        AppToast.show(context, message: 'Ajuste proyectado guardado correctamente');
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0F172A)),
+                  child: const Text('Guardar', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   State<FutureAdjustmentsModal> createState() => _FutureAdjustmentsModalState();
 }

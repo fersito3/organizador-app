@@ -72,12 +72,14 @@ class FinancialAnalyticsService {
 
     final gastoPromedioDiarioHabitual = diaActual > 0 ? (totalGastosMes / diaActual) : 0.0;
 
-    // 5. Proyección a fin de mes
-    final gastoProyectadoFinMes = totalGastosMes + (gastoPromedioDiarioHabitual * (diasEnMes - diaActual));
+    // 5. Proyección a fin de mes (incluyendo egresos/deudas futuras proyectadas)
+    final totalIngresosProyectados = totalIngresosMes + ingresosFuturosPendientes;
+    final totalGastosFuturos = totalGastosMes + gastosFuturosPendientes;
+    final gastoProyectadoFinMes = totalGastosFuturos + (gastoPromedioDiarioHabitual * (diasEnMes - diaActual));
 
-    // 6. Porcentaje de Ingresos Consumido
-    final porcentajeIngresosConsumido = totalIngresosMes > 0
-        ? ((totalGastosMes / totalIngresosMes) * 100).clamp(0.0, 999.0)
+    // 6. Porcentaje de Ingresos Consumido (considerando ingresos proyectados)
+    final porcentajeIngresosConsumido = totalIngresosProyectados > 0
+        ? ((totalGastosMes / totalIngresosProyectados) * 100).clamp(0.0, 999.0)
         : 0.0;
 
     // 7. Comparativas (Mes Anterior y Semana Anterior)
@@ -179,31 +181,55 @@ class FinancialAnalyticsService {
       }
     }
 
-    // Alerta 2: Riesgo de superación de ingresos por proyección
-    if (totalIngresosMes > 0 && gastoProyectadoFinMes > totalIngresosMes) {
-      final ex = gastoProyectadoFinMes - totalIngresosMes;
+    // Alerta 2: Proyección mensual considerando ingresos y deudas futuras
+    if (totalIngresosProyectados > 0 && gastoProyectadoFinMes > totalIngresosProyectados) {
+      final ex = gastoProyectadoFinMes - totalIngresosProyectados;
       alertas.add(FinancialAlert(
-        title: 'Proyección mensual',
-        detail: 'El gasto proyectado a fin de mes supera tus ingresos registrados por \$${ex.toStringAsFixed(0)}.',
+        title: 'Proyección de balance',
+        detail: 'Con las proyecciones y tu ritmo de consumo, el gasto total a fin de mes superará tus ingresos proyectados por \$${ex.toStringAsFixed(0)}.',
         level: AlertLevel.warning,
+      ));
+    } else if (totalIngresosProyectados == 0 && (totalGastosMes > 0 || gastosFuturosPendientes > 0)) {
+      alertas.add(FinancialAlert(
+        title: 'Sin ingresos registrados',
+        detail: 'Registraste gastos y/o compromisos futuros por \$${(totalGastosMes + gastosFuturosPendientes).toStringAsFixed(0)} pero no tenés ingresos cargados en este mes.',
+        level: AlertLevel.info,
       ));
     }
 
-    // Alerta 3: Tendencia de ahorro positiva
-    if (promedioHistoricoMensual > 0 && totalGastosMes < promedioHistoricoMensual * 0.9) {
-      final redPct = ((1 - (totalGastosMes / promedioHistoricoMensual)) * 100).toInt();
+    // Alerta 3: Ingresos futuros pendientes
+    if (ingresosFuturosPendientes > 0) {
       alertas.add(FinancialAlert(
-        title: 'Tendencia de gasto',
-        detail: 'Tus gastos del mes se mantienen un $redPct% por debajo de tu promedio histórico.',
+        title: 'Ingresos futuros pendientes',
+        detail: 'Tenés \$${ingresosFuturosPendientes.toStringAsFixed(0)} en cobros o ingresos proyectados para este mes.',
         level: AlertLevel.success,
       ));
     }
 
-    // Alerta 4: Consumo acelerado en primera mitad de mes
-    if (diaActual <= 15 && totalIngresosMes > 0 && porcentajeIngresosConsumido > 65) {
+    // Alerta 4: Deudas o compromisos futuros pendientes
+    if (gastosFuturosPendientes > 0) {
       alertas.add(FinancialAlert(
-        title: 'Ritmo de consumo',
-        detail: 'Se ha registrado el ${porcentajeIngresosConsumido.toInt()}% de los ingresos en la primera mitad del mes.',
+        title: 'Compromisos de pago futuros',
+        detail: 'Tenés \$${gastosFuturosPendientes.toStringAsFixed(0)} en egresos o deudas futuras programadas para este mes.',
+        level: AlertLevel.info,
+      ));
+    }
+
+    // Alerta 5: Tendencia de ahorro positiva
+    if (promedioHistoricoMensual > 0 && totalGastosMes < promedioHistoricoMensual * 0.9) {
+      final redPct = ((1 - (totalGastosMes / promedioHistoricoMensual)) * 100).toInt();
+      alertas.add(FinancialAlert(
+        title: 'Tendencia de gasto favorable',
+        detail: 'Tus gastos acumulados están un $redPct% por debajo de tu promedio histórico.',
+        level: AlertLevel.success,
+      ));
+    }
+
+    // Alerta 6: Consumo acelerado en primera mitad de mes
+    if (diaActual <= 15 && totalIngresosProyectados > 0 && porcentajeIngresosConsumido > 65) {
+      alertas.add(FinancialAlert(
+        title: 'Ritmo de consumo alto',
+        detail: 'Ya has ejecutado el ${porcentajeIngresosConsumido.toInt()}% de los ingresos proyectados en la primera mitad del mes.',
         level: AlertLevel.info,
       ));
     }

@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/enums.dart';
 import '../../../../core/navigation/app_routes.dart';
+import '../../../../core/settings/settings_provider.dart';
+import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/app_toast.dart';
+
 import '../../domain/models/transaccion.dart';
 import '../../domain/models/categoria_domain.dart';
 import '../controllers/expenses_notifier.dart';
@@ -36,24 +39,20 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9), // Slate 100
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Finanzas & Gastos',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-        ),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF0F172A),
-        elevation: 0,
-        centerTitle: true,
+        title: const Text('Historial de Movimientos'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.people_outline_rounded, color: Color(0xFF0F172A)),
+            icon: const Icon(Icons.people_outline_rounded),
             tooltip: 'Administrar Contactos',
             onPressed: () {
               Navigator.pushNamed(context, AppRoutes.routeManageConocidos);
@@ -62,22 +61,22 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           Consumer<ExpensesNotifier>(
             builder: (context, notifier, child) {
               if (notifier.isSyncing) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Center(
                     child: SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Color(0xFF0F172A),
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
                       ),
                     ),
                   ),
                 );
               }
               return IconButton(
-                icon: const Icon(Icons.sync_rounded, color: Color(0xFF0F172A)),
+                icon: const Icon(Icons.sync_rounded),
                 tooltip: 'Sincronizar Mercado Pago',
                 onPressed: () async {
                   await notifier.sincronizarMercadoPago();
@@ -127,7 +126,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           onPressed: () {
             Navigator.pushNamed(context, AppRoutes.routeAddTransaction);
           },
-          backgroundColor: const Color(0xFF0F172A), // Slate 900
+          backgroundColor: isDark ? const Color(0xFF0EA5E9) : const Color(0xFF0F172A),
           tooltip: 'Nueva Transacción',
           child: const Icon(Icons.add_rounded, color: Colors.white),
         ),
@@ -249,8 +248,11 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
   // Search input and Category/Type chips
   Widget _buildSearchAndFilters(ExpensesNotifier notifier) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
-      color: Colors.white,
+      color: theme.cardColor,
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: Column(
         children: [
@@ -258,13 +260,14 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           TextField(
             controller: _searchController,
             onChanged: (val) => notifier.setFiltroBusqueda(val),
+            style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A), fontSize: 14),
             decoration: InputDecoration(
               hintText: 'Buscar descripción, emisor o receptor...',
-              hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-              prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF64748B)),
+              hintStyle: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 14),
+              prefixIcon: Icon(Icons.search_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
               suffixIcon: _searchController.text.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear_rounded, color: Color(0xFF64748B)),
+                      icon: Icon(Icons.clear_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                       onPressed: () {
                         _searchController.clear();
                         notifier.setFiltroBusqueda('');
@@ -273,7 +276,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   : null,
               contentPadding: const EdgeInsets.symmetric(vertical: 0),
               filled: true,
-              fillColor: const Color(0xFFF1F5F9),
+              fillColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide.none,
@@ -288,9 +291,11 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
               FilterChip(
                 label: const Text('Todos'),
                 selected: notifier.filtroTipo == null,
-                selectedColor: const Color(0xFFE2E8F0),
+                selectedColor: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                 labelStyle: TextStyle(
-                  color: notifier.filtroTipo == null ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+                  color: notifier.filtroTipo == null
+                      ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                      : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                   fontWeight: FontWeight.w600,
                   fontSize: 12,
                 ),
@@ -298,18 +303,18 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 backgroundColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
-                  side: BorderSide(color: Colors.grey.shade300),
+                  side: BorderSide(color: isDark ? const Color(0xFF475569) : Colors.grey.shade300),
                 ),
               ),
               const SizedBox(width: 8),
               FilterChip(
                 label: const Text('Ingresos'),
                 selected: notifier.filtroTipo == TipoTransaccion.ingreso,
-                selectedColor: const Color(0xFFD1FAE5), // Soft green
+                selectedColor: isDark ? const Color(0xFF064E3B) : const Color(0xFFD1FAE5),
                 labelStyle: TextStyle(
                   color: notifier.filtroTipo == TipoTransaccion.ingreso
-                      ? const Color(0xFF065F46)
-                      : const Color(0xFF64748B),
+                      ? (isDark ? const Color(0xFFA7F3D0) : const Color(0xFF065F46))
+                      : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                   fontWeight: FontWeight.w600,
                   fontSize: 12,
                 ),
@@ -317,18 +322,18 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 backgroundColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
-                  side: BorderSide(color: Colors.grey.shade300),
+                  side: BorderSide(color: isDark ? const Color(0xFF475569) : Colors.grey.shade300),
                 ),
               ),
               const SizedBox(width: 8),
               FilterChip(
                 label: const Text('Gastos'),
                 selected: notifier.filtroTipo == TipoTransaccion.egreso,
-                selectedColor: const Color(0xFFFEE2E2), // Soft red
+                selectedColor: isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEE2E2),
                 labelStyle: TextStyle(
                   color: notifier.filtroTipo == TipoTransaccion.egreso
-                      ? const Color(0xFF991B1B)
-                      : const Color(0xFF64748B),
+                      ? (isDark ? const Color(0xFFFECACA) : const Color(0xFF991B1B))
+                      : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                   fontWeight: FontWeight.w600,
                   fontSize: 12,
                 ),
@@ -336,7 +341,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 backgroundColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
-                  side: BorderSide(color: Colors.grey.shade300),
+                  side: BorderSide(color: isDark ? const Color(0xFF475569) : Colors.grey.shade300),
                 ),
               ),
             ],
@@ -392,14 +397,17 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           } catch (_) {}
         }
 
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.cardColor,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.02),
+                color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.02),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -415,7 +423,6 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
                     children: [
-                      // Circular profile picture or fallback arrow icon
                       // Circular profile picture or fallback arrow icon
                       Builder(
                         builder: (context) {
@@ -434,7 +441,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                                     width: 44,
                                     height: 44,
                                     decoration: BoxDecoration(
-                                      color: Color(colorValue).withOpacity(0.15),
+                                      color: Color(colorValue).withValues(alpha: 0.15),
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(
@@ -451,7 +458,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: Color(colorValue).withOpacity(0.15),
+                              color: Color(colorValue).withValues(alpha: 0.15),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -470,10 +477,10 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                           children: [
                             Text(
                               item.descripcion,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF1E293B),
+                                color: isDark ? Colors.white : const Color(0xFF1E293B),
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -485,7 +492,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: Color(colorValue).withOpacity(0.1),
+                                    color: Color(colorValue).withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
@@ -500,10 +507,10 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                                 const SizedBox(width: 8),
                                 // Date text
                                 Text(
-                                  item.fecha.toString().split(' ')[0],
-                                  style: const TextStyle(
+                                  AppFormatters.formatDate(item.fecha, context.watch<SettingsProvider>().dateFormat),
+                                  style: TextStyle(
                                     fontSize: 11,
-                                    color: Color(0xFF64748B),
+                                    color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF64748B),
                                   ),
                                 ),
                               ],

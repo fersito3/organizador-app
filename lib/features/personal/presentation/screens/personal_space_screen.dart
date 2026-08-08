@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/enums.dart';
+import '../../../../core/theme/app_colors.dart';
+
 import '../../../../core/database/app_database.dart';
 import '../../../../core/widgets/app_toast.dart';
 import '../controllers/personal_notifier.dart';
@@ -57,22 +59,18 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
     final notifier = context.watch<PersonalNotifier>();
     final items = notifier.elementosFiltrados;
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // Slate 50
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Espacio Personal',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-        ),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF0F172A),
-        elevation: 0,
-        centerTitle: true,
+        title: const Text('Espacio Personal'),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: const Color(0xFF4F46E5), // Indigo 600
-          unselectedLabelColor: const Color(0xFF64748B),
-          indicatorColor: const Color(0xFF4F46E5),
+          labelColor: const Color(0xFF6366F1),
+          unselectedLabelColor: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+          indicatorColor: const Color(0xFF6366F1),
           indicatorWeight: 3,
           labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           tabs: const [
@@ -87,7 +85,7 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
           children: [
             // BÚSQUEDA GLOBAL
             Container(
-              color: Colors.white,
+              color: theme.cardColor,
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               child: TextField(
                 controller: _searchController,
@@ -555,8 +553,13 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
   }
 
   void _mostrarModalCreacionContextual(BuildContext context, PersonalNotifier notifier) {
+    final cardBg = AppColors.cardBackground(context);
+    final textPrimary = AppColors.textPrimary(context);
+    final textSecondary = AppColors.textSecondary(context);
+
     showModalBottomSheet(
       context: context,
+      backgroundColor: cardBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -567,9 +570,9 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
+                Text(
                   '¿Qué deseas crear?',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textPrimary),
                 ),
                 const SizedBox(height: 16),
                 ListTile(
@@ -577,8 +580,8 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
                     backgroundColor: Color(0xFFEEF2FF),
                     child: Icon(Icons.note_alt_rounded, color: Color(0xFF4F46E5)),
                   ),
-                  title: const Text('Nota / Dato Frecuente', style: TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: const Text('Alias, CBU, credenciales, enlaces o notas rápidas'),
+                  title: Text('Nota / Dato Frecuente', style: TextStyle(fontWeight: FontWeight.bold, color: textPrimary)),
+                  subtitle: Text('Alias, CBU, credenciales, enlaces o notas rápidas', style: TextStyle(color: textSecondary)),
                   onTap: () {
                     Navigator.pop(context);
                     _mostrarModalNota(context, notifier);
@@ -589,8 +592,8 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
                     backgroundColor: Color(0xFFECFDF5),
                     child: Icon(Icons.checklist_rounded, color: Color(0xFF10B981)),
                   ),
-                  title: const Text('Lista / Checklist', style: TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: const Text('Supermercado, equipaje o to-dos sin fecha'),
+                  title: Text('Lista / Checklist', style: TextStyle(fontWeight: FontWeight.bold, color: textPrimary)),
+                  subtitle: Text('Supermercado, equipaje o to-dos sin fecha', style: TextStyle(color: textSecondary)),
                   onTap: () {
                     Navigator.pop(context);
                     _mostrarModalLista(context, notifier);
@@ -601,8 +604,8 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
                     backgroundColor: Color(0xFFEEF2FF),
                     child: Icon(Icons.flag_rounded, color: Color(0xFF6366F1)),
                   ),
-                  title: const Text('Meta / Objetivo', style: TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: const Text('Objetivos con indicador de progreso y plazo'),
+                  title: Text('Meta / Objetivo', style: TextStyle(fontWeight: FontWeight.bold, color: textPrimary)),
+                  subtitle: Text('Objetivos con indicador de progreso y plazo', style: TextStyle(color: textSecondary)),
                   onTap: () {
                     Navigator.pop(context);
                     _mostrarModalMeta(context, notifier);
@@ -616,6 +619,7 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
     );
   }
 
+
   // MODAL NOTA
   void _mostrarModalNota(BuildContext context, PersonalNotifier notifier) {
     final tituloCtrl = TextEditingController();
@@ -623,10 +627,15 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
     final catCtrl = TextEditingController(text: 'General');
     Prioridad prio = Prioridad.media;
 
+    final cardBg = AppColors.cardBackground(context);
+    final textPrimary = AppColors.textPrimary(context);
+    final textSecondary = AppColors.textSecondary(context);
+    final isDark = AppColors.isDarkMode(context);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: cardBg,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) {
         return StatefulBuilder(
@@ -642,26 +651,42 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('Nueva Nota / Dato Frecuente', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text('Nueva Nota / Dato Frecuente', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textPrimary)),
                   const SizedBox(height: 16),
                   TextField(
                     controller: tituloCtrl,
-                    decoration: const InputDecoration(labelText: 'Título (ej. CBU / Alias / Wi-Fi)', border: OutlineInputBorder()),
+                    style: TextStyle(color: textPrimary),
+                    decoration: InputDecoration(
+                      labelText: 'Título (ej. CBU / Alias / Wi-Fi)',
+                      labelStyle: TextStyle(color: textSecondary),
+                      border: const OutlineInputBorder(),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: contenidoCtrl,
                     maxLines: 3,
-                    decoration: const InputDecoration(labelText: 'Contenido / Texto a copiar', border: OutlineInputBorder()),
+                    style: TextStyle(color: textPrimary),
+                    decoration: InputDecoration(
+                      labelText: 'Contenido / Texto a copiar',
+                      labelStyle: TextStyle(color: textSecondary),
+                      border: const OutlineInputBorder(),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<Prioridad>(
                     value: prio,
-                    decoration: const InputDecoration(labelText: 'Prioridad', border: OutlineInputBorder()),
-                    items: const [
-                      DropdownMenuItem(value: Prioridad.alta, child: Text('Alta')),
-                      DropdownMenuItem(value: Prioridad.media, child: Text('Media')),
-                      DropdownMenuItem(value: Prioridad.baja, child: Text('Baja')),
+                    dropdownColor: cardBg,
+                    style: TextStyle(color: textPrimary),
+                    decoration: InputDecoration(
+                      labelText: 'Prioridad',
+                      labelStyle: TextStyle(color: textSecondary),
+                      border: const OutlineInputBorder(),
+                    ),
+                    items: [
+                      DropdownMenuItem(value: Prioridad.alta, child: Text('Alta', style: TextStyle(color: textPrimary))),
+                      DropdownMenuItem(value: Prioridad.media, child: Text('Media', style: TextStyle(color: textPrimary))),
+                      DropdownMenuItem(value: Prioridad.baja, child: Text('Baja', style: TextStyle(color: textPrimary))),
                     ],
                     onChanged: (val) {
                       if (val != null) setModalState(() => prio = val);
@@ -681,7 +706,7 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0F172A),
+                      backgroundColor: const Color(0xFF4F46E5),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: const Text('Guardar Nota', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -703,10 +728,14 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
     List<String> itemsTemp = itemExistente?.items.map((i) => i.texto).toList() ?? [];
     Prioridad prio = itemExistente?.elemento.prioridad ?? Prioridad.media;
 
+    final cardBg = AppColors.cardBackground(context);
+    final textPrimary = AppColors.textPrimary(context);
+    final textSecondary = AppColors.textSecondary(context);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: cardBg,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) {
         return StatefulBuilder(
@@ -723,11 +752,19 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(itemExistente == null ? 'Nueva Lista / Checklist' : 'Editar Lista', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(
+                      itemExistente == null ? 'Nueva Lista / Checklist' : 'Editar Lista',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textPrimary),
+                    ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: tituloCtrl,
-                      decoration: const InputDecoration(labelText: 'Título de la lista (ej: Compras)', border: OutlineInputBorder()),
+                      style: TextStyle(color: textPrimary),
+                      decoration: InputDecoration(
+                        labelText: 'Título de la lista (ej: Compras)',
+                        labelStyle: TextStyle(color: textSecondary),
+                        border: const OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -735,7 +772,12 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
                         Expanded(
                           child: TextField(
                             controller: itemCtrl,
-                            decoration: const InputDecoration(labelText: 'Agregar ítem', border: OutlineInputBorder()),
+                            style: TextStyle(color: textPrimary),
+                            decoration: InputDecoration(
+                              labelText: 'Agregar ítem',
+                              labelStyle: TextStyle(color: textSecondary),
+                              border: const OutlineInputBorder(),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -761,7 +803,7 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
                         itemBuilder: (context, idx) {
                           return ListTile(
                             dense: true,
-                            title: Text(itemsTemp[idx]),
+                            title: Text(itemsTemp[idx], style: TextStyle(color: textPrimary)),
                             trailing: IconButton(
                               icon: const Icon(Icons.close_rounded, size: 18, color: Colors.red),
                               onPressed: () {
@@ -789,7 +831,7 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0F172A),
+                        backgroundColor: const Color(0xFF10B981),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: const Text('Guardar Lista', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -812,10 +854,14 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
     DateTime? fechaObj;
     Prioridad prio = Prioridad.media;
 
+    final cardBg = AppColors.cardBackground(context);
+    final textPrimary = AppColors.textPrimary(context);
+    final textSecondary = AppColors.textSecondary(context);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: cardBg,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) {
         return StatefulBuilder(
@@ -831,17 +877,27 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('Nueva Meta / Objetivo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text('Nueva Meta / Objetivo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textPrimary)),
                   const SizedBox(height: 16),
                   TextField(
                     controller: tituloCtrl,
-                    decoration: const InputDecoration(labelText: 'Título de la meta (ej. Leer libro)', border: OutlineInputBorder()),
+                    style: TextStyle(color: textPrimary),
+                    decoration: InputDecoration(
+                      labelText: 'Título de la meta (ej. Leer libro)',
+                      labelStyle: TextStyle(color: textSecondary),
+                      border: const OutlineInputBorder(),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: totalCtrl,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Cantidad o Unidades totales', border: OutlineInputBorder()),
+                    style: TextStyle(color: textPrimary),
+                    decoration: InputDecoration(
+                      labelText: 'Cantidad o Unidades totales',
+                      labelStyle: TextStyle(color: textSecondary),
+                      border: const OutlineInputBorder(),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
@@ -857,7 +913,12 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
                       }
                     },
                     icon: const Icon(Icons.calendar_month_rounded),
-                    label: Text(fechaObj == null ? 'Seleccionar Fecha Límite Meta (Opcional)' : 'Fecha Objetivo: ${fechaObj!.day}/${fechaObj!.month}/${fechaObj!.year}'),
+                    label: Text(
+                      fechaObj == null
+                          ? 'Seleccionar Fecha Límite Meta (Opcional)'
+                          : 'Fecha Objetivo: ${fechaObj!.day}/${fechaObj!.month}/${fechaObj!.year}',
+                      style: TextStyle(color: textPrimary),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -876,7 +937,7 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0F172A),
+                      backgroundColor: const Color(0xFF6366F1),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: const Text('Guardar Meta', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -889,4 +950,5 @@ class _PersonalSpaceScreenState extends State<PersonalSpaceScreen> with SingleTi
       },
     );
   }
+
 }

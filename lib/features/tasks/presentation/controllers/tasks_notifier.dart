@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:drift/drift.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/enums.dart';
+import '../../../../core/notifications/notification_scheduler.dart';
+import '../../../../core/settings/settings_model.dart';
 import '../../domain/repositories/itasks_repository.dart';
 
 class TasksNotifier extends ChangeNotifier {
@@ -72,21 +74,47 @@ class TasksNotifier extends ChangeNotifier {
     }).toList();
   }
 
-  Future<int> guardarTarea(TareasCompanion companion) async {
-    return await _tasksRepository.guardarTarea(companion);
+  Future<int> guardarTarea(
+    TareasCompanion companion, {
+    NotificationScheduler? scheduler,
+    AppSettings? settings,
+  }) async {
+    final id = await _tasksRepository.guardarTarea(companion);
+    if (scheduler != null && settings != null && companion.titulo.present && companion.fecha.present) {
+      await scheduler.scheduleTaskReminder(
+        taskId: id,
+        title: companion.titulo.value,
+        dueDate: companion.fecha.value,
+        settings: settings,
+      );
+    }
+    return id;
   }
 
-  Future<void> toggleCompletada(Tarea tarea) async {
+  Future<void> toggleCompletada(
+    Tarea tarea, {
+    NotificationScheduler? scheduler,
+  }) async {
+    final nuevaEstado = !tarea.completada;
     await _tasksRepository.guardarTarea(
       TareasCompanion(
         id: Value(tarea.id),
-        completada: Value(!tarea.completada),
+        completada: Value(nuevaEstado),
       ),
     );
+    if (scheduler != null && nuevaEstado) {
+      await scheduler.cancelTaskReminder(tarea.id);
+    }
   }
 
-  Future<void> eliminarTarea(int id) async {
+  Future<void> eliminarTarea(
+    int id, {
+    NotificationScheduler? scheduler,
+  }) async {
     await _tasksRepository.eliminarTarea(id);
+    if (scheduler != null) {
+      await scheduler.cancelTaskReminder(id);
+    }
   }
 
   // --- PARSEO DE DEUDAS (monto:3500|amigo:Juan|detalles:Pizza) ---

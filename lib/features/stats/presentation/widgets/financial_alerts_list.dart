@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/financial_alert.dart';
 
 class FinancialAlertsList extends StatelessWidget {
@@ -13,68 +14,136 @@ class FinancialAlertsList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (alertas.isEmpty) return const SizedBox.shrink();
 
+    final isDark = AppColors.isDarkMode(context);
+    final textPrimary = AppColors.textPrimary(context);
+
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(bottom: 12.0),
-          child: Text(
-            'Alertas Financieras',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-          ),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6366F1).withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.auto_awesome_rounded, size: 18, color: Color(0xFF6366F1)),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Insights & Salud Financiera',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                color: textPrimary,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
         ),
+        const SizedBox(height: 14),
         ...alertas.map((alert) {
-          Color bg = const Color(0xFFF1F5F9);
-          Color border = const Color(0xFFE2E8F0);
+          Color bg = isDark ? AppColors.darkCard : const Color(0xFFF8FAFC);
+          Color border = isDark ? AppColors.darkBorder : const Color(0xFFE2E8F0);
           Color iconColor = const Color(0xFF64748B);
           IconData iconData = Icons.info_outline_rounded;
+          String badgeText = 'INFO';
 
           switch (alert.level) {
             case AlertLevel.warning:
-              bg = const Color(0xFFFFFBEB);
-              border = const Color(0xFFFDE68A);
-              iconColor = const Color(0xFFD97706);
+              bg = isDark ? const Color(0xFF2E1C0C) : const Color(0xFFFFFBEB);
+              border = isDark ? const Color(0xFF7C2D12) : const Color(0xFFFDE68A);
+              iconColor = const Color(0xFFF59E0B);
               iconData = Icons.warning_amber_rounded;
+              badgeText = 'ALERTA';
               break;
             case AlertLevel.success:
-              bg = const Color(0xFFECFDF5);
-              border = const Color(0xFFA7F3D0);
-              iconColor = const Color(0xFF059669);
+              bg = isDark ? const Color(0xFF062C1E) : const Color(0xFFECFDF5);
+              border = isDark ? const Color(0xFF065F46) : const Color(0xFFA7F3D0);
+              iconColor = const Color(0xFF10B981);
               iconData = Icons.check_circle_outline_rounded;
+              badgeText = 'POSITIVO';
               break;
             case AlertLevel.info:
-              bg = const Color(0xFFEFF6FF);
-              border = const Color(0xFFBFDBFE);
-              iconColor = const Color(0xFF2563EB);
-              iconData = Icons.info_outline_rounded;
+              bg = isDark ? const Color(0xFF0F2342) : const Color(0xFFEFF6FF);
+              border = isDark ? const Color(0xFF1E40AF) : const Color(0xFFBFDBFE);
+              iconColor = const Color(0xFF3B82F6);
+              iconData = Icons.lightbulb_outline_rounded;
+              badgeText = 'INSIGHT';
               break;
           }
 
           return Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(14),
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: bg,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: border),
+              boxShadow: [
+                BoxShadow(
+                  color: iconColor.withOpacity(0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(iconData, color: iconColor, size: 20),
-                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(iconData, color: iconColor, size: 20),
+                ),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        alert.title,
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: iconColor),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              alert.title,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: iconColor,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: iconColor.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              badgeText,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: iconColor,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Text(
                         alert.detail,
-                        style: const TextStyle(fontSize: 13, color: Color(0xFF334155), height: 1.3),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? textPrimary : const Color(0xFF334155),
+                          height: 1.35,
+                        ),
                       ),
                     ],
                   ),
@@ -82,7 +151,7 @@ class FinancialAlertsList extends StatelessWidget {
               ],
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }

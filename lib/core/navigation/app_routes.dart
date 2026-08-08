@@ -7,6 +7,11 @@ import '../../features/expenses/presentation/screens/manage_conocidos_screen.dar
 import '../../features/tasks/presentation/screens/tasks_screen.dart';
 import '../../features/stats/presentation/screens/stats_screen.dart';
 import '../../features/personal/presentation/screens/personal_space_screen.dart';
+import '../../features/settings/presentation/screens/backup_screen.dart';
+
+import '../../features/settings/presentation/screens/settings_screen.dart';
+
+import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 
 class AppRoutes {
   static const String routeHome = '/';
@@ -17,6 +22,9 @@ class AppRoutes {
   static const String routePersonalSpace = '/personal-space';
   static const String routeManageConocidos = '/manage-conocidos';
   static const String routeStats = '/stats';
+  static const String routeBackup = '/backup';
+  static const String routeSettings = '/settings';
+  static const String routeOnboarding = '/onboarding';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -24,6 +32,11 @@ class AppRoutes {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const MainMenuScreen(),
+        );
+      case routeOnboarding:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const OnboardingScreen(),
         );
       case routeExpenses:
         return MaterialPageRoute(
@@ -61,6 +74,16 @@ class AppRoutes {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const StatsScreen(),
+        );
+      case routeBackup:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const BackupScreen(),
+        );
+      case routeSettings:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const SettingsScreen(),
         );
       default:
         return MaterialPageRoute(

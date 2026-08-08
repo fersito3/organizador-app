@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_toast.dart';
+
 import '../controllers/expenses_notifier.dart';
 import '../../domain/models/conocido.dart';
 
@@ -31,6 +33,9 @@ class _ManageConocidosScreenState extends State<ManageConocidosScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     final notifier = Provider.of<ExpensesNotifier>(context);
     final list = notifier.conocidos.where((c) {
       if (_searchQuery.isEmpty) return true;
@@ -42,16 +47,9 @@ class _ManageConocidosScreenState extends State<ManageConocidosScreen> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // Slate 50
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Administrar Contactos',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-        ),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF0F172A),
-        elevation: 0,
-        centerTitle: true,
+        title: const Text('Administrar Contactos'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => Navigator.pop(context),
@@ -61,7 +59,7 @@ class _ManageConocidosScreenState extends State<ManageConocidosScreen> {
         children: [
           // Search Bar
           Container(
-            color: Colors.white,
+            color: theme.cardColor,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: TextField(
               controller: _searchController,
@@ -145,21 +143,30 @@ class _ManageConocidosScreenState extends State<ManageConocidosScreen> {
   }
 
   Widget _buildContactoTile(BuildContext context, Conocido c, ExpensesNotifier notifier) {
+    final isDark = AppColors.isDarkMode(context);
+    final cardBg = AppColors.cardBackground(context);
+    final textPrimary = AppColors.textPrimary(context);
+    final textSecondary = AppColors.textSecondary(context);
+    final borderColor = AppColors.borderColor(context);
+
     final sinMpId = c.mpUserId == null || c.mpUserId!.trim().isEmpty;
-    final initialsUrl = 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(c.nombreCompleto)}&background=0F172A&color=ffffff&bold=true&size=128';
+    final initialsUrl = 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(c.nombreCompleto)}&background=${isDark ? "1E293B" : "0F172A"}&color=ffffff&bold=true&size=128';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.01),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: isDark ? Border.all(color: borderColor) : null,
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.01),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -170,14 +177,14 @@ class _ManageConocidosScreenState extends State<ManageConocidosScreen> {
             width: 40,
             height: 40,
             errorBuilder: (_, __, ___) => CircleAvatar(
-              backgroundColor: Colors.grey.shade200,
-              child: const Icon(Icons.person_rounded, color: Colors.grey),
+              backgroundColor: isDark ? AppColors.darkSubSurface : Colors.grey.shade200,
+              child: Icon(Icons.person_rounded, color: isDark ? AppColors.darkTextSecondary : Colors.grey),
             ),
           ),
         ),
         title: Text(
           c.nombreCompleto,
-          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+          style: TextStyle(fontWeight: FontWeight.bold, color: textPrimary),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,7 +208,7 @@ class _ManageConocidosScreenState extends State<ManageConocidosScreen> {
                   const SizedBox(width: 4),
                   Text(
                     'ID MP: ${c.mpUserId}',
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                    style: TextStyle(fontSize: 11, color: textSecondary),
                   ),
                 ],
               ),
@@ -211,7 +218,7 @@ class _ManageConocidosScreenState extends State<ManageConocidosScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: const Icon(Icons.edit_rounded, color: Color(0xFF64748B), size: 20),
+              icon: Icon(Icons.edit_rounded, color: textSecondary, size: 20),
               onPressed: () => _mostrarUpsertContactoDialog(context, notifier, conocido: c),
             ),
             IconButton(
@@ -222,6 +229,7 @@ class _ManageConocidosScreenState extends State<ManageConocidosScreen> {
         ),
       ),
     );
+
   }
 
   void _eliminarContactoConfirmacion(BuildContext context, Conocido c, ExpensesNotifier notifier) {

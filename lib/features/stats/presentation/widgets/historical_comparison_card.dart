@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/financial_stats_summary.dart';
 
 class HistoricalComparisonCard extends StatelessWidget {
@@ -13,12 +14,17 @@ class HistoricalComparisonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textPrimary = AppColors.textPrimary(context);
+    final textSecondary = AppColors.textSecondary(context);
+    final borderColor = AppColors.borderColor(context);
+    final cardColor = AppColors.cardBackground(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Comparativa & Hábitos',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textPrimary),
         ),
         const SizedBox(height: 12),
 
@@ -26,9 +32,9 @@ class HistoricalComparisonCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cardColor,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            border: Border.all(color: borderColor),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,17 +42,17 @@ class HistoricalComparisonCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'vs. Promedio Histórico',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: textPrimary),
                   ),
-                  _buildTrendChip(summary.variacionPromedioHistoricoPct),
+                  _buildTrendChip(context, summary.variacionPromedioHistoricoPct),
                 ],
               ),
               const SizedBox(height: 6),
               Text(
                 'Este mes gastaste un ${_formatearPct(summary.variacionPromedioHistoricoPct)} que tu promedio histórico de los últimos meses (${formatCurrency(summary.promedioHistoricoMensual, conSigno: false)}).',
-                style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.3),
+                style: TextStyle(fontSize: 13, color: textSecondary, height: 1.3),
               ),
             ],
           ),
@@ -59,6 +65,7 @@ class HistoricalComparisonCard extends StatelessWidget {
           children: [
             Expanded(
               child: _buildComparisonTile(
+                context,
                 title: 'vs. Mes Anterior',
                 pct: summary.variacionMesAnteriorPct,
               ),
@@ -66,6 +73,7 @@ class HistoricalComparisonCard extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _buildComparisonTile(
+                context,
                 title: 'vs. Semana Anterior',
                 pct: summary.variacionSemanaAnteriorPct,
               ),
@@ -76,22 +84,26 @@ class HistoricalComparisonCard extends StatelessWidget {
     );
   }
 
-  Widget _buildComparisonTile({required String title, required double pct}) {
+  Widget _buildComparisonTile(BuildContext context, {required String title, required double pct}) {
+    final textSecondary = AppColors.textSecondary(context);
+    final borderColor = AppColors.borderColor(context);
+    final cardColor = AppColors.cardBackground(context);
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+          Text(title, style: TextStyle(fontSize: 12, color: textSecondary, fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
           Row(
             children: [
-              _buildTrendChip(pct),
+              _buildTrendChip(context, pct),
             ],
           ),
         ],
@@ -99,22 +111,23 @@ class HistoricalComparisonCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTrendChip(double pct) {
+  Widget _buildTrendChip(BuildContext context, double pct) {
+    final isDark = AppColors.isDarkMode(context);
     final aumento = pct > 0;
     final esIgual = pct.abs() < 0.1;
 
-    Color bg = const Color(0xFFF1F5F9);
-    Color txt = const Color(0xFF64748B);
+    Color bg = isDark ? AppColors.darkSubSurface : const Color(0xFFF1F5F9);
+    Color txt = AppColors.textSecondary(context);
     IconData icon = Icons.remove_rounded;
 
     if (!esIgual) {
       if (aumento) {
-        bg = const Color(0xFFFEE2E2); // Red 100
-        txt = const Color(0xFFEF4444); // Red 500
+        bg = isDark ? const Color(0xFF450A0A) : const Color(0xFFFEE2E2);
+        txt = const Color(0xFFEF4444);
         icon = Icons.trending_up_rounded;
       } else {
-        bg = const Color(0xFFD1FAE5); // Emerald 100
-        txt = const Color(0xFF10B981); // Emerald 500
+        bg = isDark ? const Color(0xFF064E3B) : const Color(0xFFD1FAE5);
+        txt = const Color(0xFF10B981);
         icon = Icons.trending_down_rounded;
       }
     }

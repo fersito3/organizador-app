@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/navigation/app_routes.dart';
+
+import '../../../../core/settings/settings_provider.dart';
+import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/app_logo.dart';
 import '../../../../core/enums.dart';
 import '../../../expenses/presentation/controllers/expenses_notifier.dart';
 import '../../../calendar/presentation/controllers/calendar_notifier.dart';
 import '../../../tasks/presentation/controllers/tasks_notifier.dart';
+
 
 class MainMenuScreen extends StatelessWidget {
   const MainMenuScreen({super.key});
@@ -15,7 +20,7 @@ class MainMenuScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
@@ -52,11 +57,11 @@ class MainMenuScreen extends StatelessWidget {
                         _buildMenuCard(
                           context: context,
                           title: 'Finanzas',
-                          subtitle: 'Gastos e Ingresos',
-                          icon: Icons.account_balance_wallet_rounded,
+                          subtitle: 'Estadisticas y resumen',
+                          icon: Icons.bar_chart_rounded,
                           startColor: const Color(0xFF0EA5E9),
                           endColor: const Color(0xFF2563EB),
-                          route: AppRoutes.routeExpenses,
+                          route: AppRoutes.routeStats,
                         ),
                         _buildMenuCard(
                           context: context,
@@ -79,12 +84,12 @@ class MainMenuScreen extends StatelessWidget {
                         ),
                         _buildMenuCard(
                           context: context,
-                          title: 'Estadísticas',
-                          subtitle: 'Resumen Mensual',
-                          icon: Icons.bar_chart_rounded,
+                          title: 'Movimientos',
+                          subtitle: 'Gastos e Ingresos',
+                          icon: Icons.receipt_long_rounded,
                           startColor: const Color(0xFF10B981),
                           endColor: const Color(0xFF047857),
-                          route: AppRoutes.routeStats,
+                          route: AppRoutes.routeExpenses,
                         ),
                       ],
                     ),
@@ -99,17 +104,6 @@ class MainMenuScreen extends StatelessWidget {
               const SizedBox(height: 30),
             ],
           ),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.pushNamed(context, AppRoutes.routeAddTransaction);
-        },
-        backgroundColor: const Color(0xFF0F172A),
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text(
-          'Nuevo Gasto',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -151,13 +145,33 @@ class MainMenuScreen extends StatelessWidget {
               ),
             ],
           ),
-          const AppLogo(size: 44),
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.shield_outlined, color: Color(0xFF64748B), size: 26),
+                tooltip: 'Backups & Propiedad de Datos',
+                onPressed: () => Navigator.pushNamed(context, AppRoutes.routeBackup),
+              ),
+              IconButton(
+                icon: const Icon(Icons.settings_outlined, color: Color(0xFF64748B), size: 26),
+                tooltip: 'Configuración',
+                onPressed: () => Navigator.pushNamed(context, AppRoutes.routeSettings),
+              ),
+              const SizedBox(width: 4),
+              const AppLogo(size: 44),
+            ],
+          ),
         ],
       ),
     );
   }
 
   Widget _buildFinancialCard(BuildContext context) {
+    final settingsProvider = context.watch<SettingsProvider>();
+    final currency = settingsProvider.currency;
+    final rateUsd = settingsProvider.exchangeRateUsd;
+    final rateEur = settingsProvider.exchangeRateEur;
+
     return Consumer<ExpensesNotifier>(
       builder: (context, notifier, child) {
         final balance = notifier.balance;
@@ -190,9 +204,9 @@ class MainMenuScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Balance General',
-                    style: TextStyle(
+                  Text(
+                    context.tr('balance_general'),
+                    style: const TextStyle(
                       color: Color(0xFF94A3B8),
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -208,12 +222,12 @@ class MainMenuScreen extends StatelessWidget {
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(Icons.trending_up_rounded, size: 14, color: Colors.greenAccent),
-                            SizedBox(width: 4),
+                          children: [
+                            const Icon(Icons.trending_up_rounded, size: 14, color: Colors.greenAccent),
+                            const SizedBox(width: 4),
                             Text(
-                              'Este Mes',
-                              style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                              context.tr('this_month'),
+                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -233,7 +247,15 @@ class MainMenuScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                oculto ? '••••' : '${esNegativo ? '-' : ''}\$${balance.abs().toStringAsFixed(2)}',
+                oculto
+                    ? '••••'
+                    : AppFormatters.formatCurrency(
+                        balance,
+                        currency,
+                        exchangeRateUsd: rateUsd,
+                        exchangeRateEur: rateEur,
+                        showSign: true,
+                      ),
                 style: TextStyle(
                   color: oculto
                       ? const Color(0xFF64748B)
@@ -263,10 +285,17 @@ class MainMenuScreen extends StatelessWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Ingresos', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                            Text(context.tr('income'), style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
                             const SizedBox(height: 2),
                             Text(
-                              oculto ? '••••' : '\$${ingresos.toStringAsFixed(2)}',
+                              oculto
+                                  ? '••••'
+                                  : AppFormatters.formatCurrency(
+                                      ingresos,
+                                      currency,
+                                      exchangeRateUsd: rateUsd,
+                                      exchangeRateEur: rateEur,
+                                    ),
                               style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -291,10 +320,17 @@ class MainMenuScreen extends StatelessWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Gastos', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                            Text(context.tr('expenses_total'), style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
                             const SizedBox(height: 2),
                             Text(
-                              oculto ? '••••' : '\$${egresos.toStringAsFixed(2)}',
+                              oculto
+                                  ? '••••'
+                                  : AppFormatters.formatCurrency(
+                                      egresos,
+                                      currency,
+                                      exchangeRateUsd: rateUsd,
+                                      exchangeRateEur: rateEur,
+                                    ),
                               style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -310,6 +346,8 @@ class MainMenuScreen extends StatelessWidget {
       },
     );
   }
+
+
 
   Widget _buildMenuCard({
     required BuildContext context,
@@ -450,11 +488,12 @@ class MainMenuScreen extends StatelessWidget {
                 children: [
                   // EVENTOS
                   ...eventosHoy.map((e) {
-                    const color = Color(0xFF8B5CF6);
+                    final color = _parseColorHex(e.colorHex);
                     final horaStr =
                         '${e.fechaInicio.hour.toString().padLeft(2, '0')}:${e.fechaInicio.minute.toString().padLeft(2, '0')} - '
                         '${e.fechaFin.hour.toString().padLeft(2, '0')}:${e.fechaFin.minute.toString().padLeft(2, '0')}';
                     return _agendaItem(
+                      context,
                       titulo: e.titulo,
                       subtitulo: e.descripcion,
                       chip: horaStr,
@@ -477,6 +516,7 @@ class MainMenuScreen extends StatelessWidget {
                     return GestureDetector(
                       onTap: () => tasksNotifier.toggleCompletada(t),
                       child: _agendaItem(
+                        context,
                         titulo: t.titulo,
                         subtitulo: t.descripcion,
                         chip: tipoLabel,
@@ -499,7 +539,21 @@ class MainMenuScreen extends StatelessWidget {
     );
   }
 
-  Widget _agendaItem({
+  static Color _parseColorHex(String? hex) {
+    if (hex == null || hex.isEmpty) return const Color(0xFFF59E0B);
+    try {
+      final clean = hex.replaceAll('#', '');
+      if (clean.length == 6) {
+        return Color(int.parse('FF$clean', radix: 16));
+      } else if (clean.length == 8) {
+        return Color(int.parse(clean, radix: 16));
+      }
+    } catch (_) {}
+    return const Color(0xFFF59E0B);
+  }
+
+  Widget _agendaItem(
+    BuildContext context, {
     required String titulo,
     required String? subtitulo,
     required String chip,
@@ -507,11 +561,16 @@ class MainMenuScreen extends StatelessWidget {
     required IconData icon,
     Widget? trailing,
   }) {
+    final cardBg = Theme.of(context).cardColor;
+    final primaryTextColor = Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFFF8FAFC)
+        : const Color(0xFF0F172A);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withOpacity(0.2)),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 2))],
@@ -531,7 +590,7 @@ class MainMenuScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(titulo,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: primaryTextColor)),
                 if (subtitulo != null && subtitulo.isNotEmpty)
                   Text(subtitulo,
                       maxLines: 1,

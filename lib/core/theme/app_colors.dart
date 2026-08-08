@@ -12,7 +12,7 @@ class AppColors {
   static const Color slate800 = Color(0xFF1E293B);
   static const Color slate900 = Color(0xFF0F172A);
 
-  // Indigo Primary Palette
+  // Indigo & Sky Primary Palette
   static const Color indigo50 = Color(0xFFEEF2FF);
   static const Color indigo100 = Color(0xFFE0E7FF);
   static const Color indigo400 = Color(0xFF818CF8);
@@ -28,5 +28,54 @@ class AppColors {
   static const Color rose500 = Color(0xFFEF4444);
   static const Color sky500 = Color(0xFF0EA5E9);
   static const Color sky600 = Color(0xFF0284C7);
+  static const Color violet500 = Color(0xFF8B5CF6);
   static const Color mpBlue = Color(0xFF009EE3);
+
+  // Dark Mode Base Palette (Black & Dark Blue Slate)
+  static const Color darkBackground = Color(0xFF0B0F17); // Deep black-blue background
+  static const Color darkSurface = Color(0xFF161F30);    // Dark navy blue surface
+  static const Color darkCard = Color(0xFF1E293B);       // Dark slate card
+  static const Color darkSubSurface = Color(0xFF0F172A); // Dark slate sub-surface
+  static const Color darkBorder = Color(0xFF334155);     // Dark slate border
+  static const Color darkTextPrimary = Color(0xFFFFFFFF); // Blanco puro para máximo contraste
+  static const Color darkTextSecondary = Color(0xFFCBD5E1); // Slate 300 claro para subtítulos y números
+
+
+  // Light Mode Base Palette
+  static const Color lightBackground = Color(0xFFF1F5F9);
+  static const Color lightSurface = Color(0xFFFFFFFF);
+  static const Color lightCard = Color(0xFFFFFFFF);
+  static const Color lightSubSurface = Color(0xFFF8FAFC);
+  static const Color lightBorder = Color(0xFFE2E8F0);
+  static const Color lightTextPrimary = Color(0xFF0F172A);
+  static const Color lightTextSecondary = Color(0xFF64748B);
+
+  // Helpers adaptativos según el brillo del contexto
+  static bool isDarkMode(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark;
+  }
+
+  static Color cardBackground(BuildContext context) {
+    return isDarkMode(context) ? darkCard : lightCard;
+  }
+
+  static Color surface(BuildContext context) {
+    return isDarkMode(context) ? darkSurface : lightSurface;
+  }
+
+  static Color subSurface(BuildContext context) {
+    return isDarkMode(context) ? darkSubSurface : lightSubSurface;
+  }
+
+  static Color textPrimary(BuildContext context) {
+    return isDarkMode(context) ? darkTextPrimary : lightTextPrimary;
+  }
+
+  static Color textSecondary(BuildContext context) {
+    return isDarkMode(context) ? darkTextSecondary : lightTextSecondary;
+  }
+
+  static Color borderColor(BuildContext context) {
+    return isDarkMode(context) ? darkBorder : lightBorder;
+  }
 }
